@@ -19,7 +19,7 @@ const Login = () => {
       </div>
 
       <div className="relative z-10 w-full max-w-md px-8">
-        <h1 className="text-center text-5xl font-bold text-[#003459]">SLOMS</h1>
+        <h1 className="text-center text-5xl font-bold font-sans text-[#003459]">BIT</h1>
 
         <p className="mt-3 mb-12 text-center text-gray-500">
           Smart Leave & Outpass Management System
