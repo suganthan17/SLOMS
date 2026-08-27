@@ -7,6 +7,9 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const leaveRoutes = require("./routes/leaveRoutes");
+const facultyRoutes = require("./routes/facultyRoutes");
+
 
 process.on("unhandledRejection", (reason) => {
   console.error("UNHANDLED REJECTION:", reason);
@@ -31,7 +34,8 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-
+app.use("/api/leaves", leaveRoutes);
+app.use("/api/faculty", facultyRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });

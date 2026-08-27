@@ -8,6 +8,11 @@ import Reports from "./pages/admin/Reports";
 import Profile from "./pages/admin/Profile";
 import Settings from "./pages/admin/Settings";
 
+import StudentDashboard from "./pages/student/StudentDashboard";
+import ApplyLeave from "./pages/student/ApplyLeave";
+import History from "./pages/student/History";
+import Outpass from "./pages/student/Outpass";
+
 function App() {
   return (
     <Routes>
@@ -18,6 +23,11 @@ function App() {
       <Route path="/admin/reports" element={<Reports />} />
       <Route path="/admin/profile" element={<Profile />} />
       <Route path="/admin/settings" element={<Settings />} />
+
+      <Route path="/student/dashboard" element={<StudentDashboard />} />
+      <Route path="/student/apply-leave" element={<ApplyLeave />} />
+      <Route path="/student/history" element={<History />} />
+      <Route path="/student/outpass" element={<Outpass />} />
     </Routes>
   );
 }
