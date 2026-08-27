@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -10,7 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const menuItems = [
   {
@@ -41,7 +41,30 @@ const menuItems = [
 ];
 
 function AdminSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem("sidebarCollapsed") === "true";
+  });
+  const [loggingOut, setLoggingOut] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", collapsed);
+  }, [collapsed]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    } finally {
+      setLoggingOut(false);
+      navigate("/");
+    }
+  };
 
   return (
     <aside
@@ -67,9 +90,7 @@ function AdminSidebar() {
           </div>
         ) : (
           <>
-            <h1 className="text-2xl font-bold tracking-wide text-white">
-              BIT
-            </h1>
+            <h1 className="text-2xl font-bold tracking-wide text-white">BIT</h1>
             <p className="mt-1 text-[12px] leading-tight text-gray-300">
               Smart Leave & Outpass
               <br />
@@ -79,7 +100,9 @@ function AdminSidebar() {
         )}
       </div>
 
-      <div className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`} />
+      <div
+        className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`}
+      />
 
       <div className="relative z-10 flex-1 px-4 pt-4">
         {menuItems.map((item) => {
@@ -114,15 +137,19 @@ function AdminSidebar() {
         <div className="absolute inset-16 rounded-full border-[16px] border-[#00A8E8]/40" />
       </div>
 
-      <div className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`} />
+      <div
+        className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`}
+      />
 
       <div className="relative z-10 px-4 py-6">
         <button
+          onClick={handleLogout}
+          disabled={loggingOut}
           title={collapsed ? "Logout" : undefined}
-          className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-gray-300 transition-all duration-300 hover:text-white"
+          className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-gray-300 transition-all duration-300 hover:text-red-500 disabled:opacity-60"
         >
           <LogOut size={19} className="shrink-0" />
-          {!collapsed && "Logout"}
+          {!collapsed && (loggingOut ? "Logging out..." : "Logout")}
         </button>
       </div>
     </aside>

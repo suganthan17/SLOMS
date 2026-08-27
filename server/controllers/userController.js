@@ -27,7 +27,9 @@ const createUser = async (req, res) => {
 
     const existing = await User.findOne({ $or: [{ email }, { username }] });
     if (existing) {
-      return res.status(409).json({ message: "Email or username already in use" });
+      return res
+        .status(409)
+        .json({ message: "Email or username already in use" });
     }
 
     const roleFieldMap = {
@@ -43,7 +45,9 @@ const createUser = async (req, res) => {
 
     for (const [key, value] of Object.entries(roleFields)) {
       if (!value) {
-        return res.status(400).json({ message: `${key} is required for ${role}` });
+        return res
+          .status(400)
+          .json({ message: `${key} is required for ${role}` });
       }
     }
 
@@ -64,6 +68,7 @@ const createUser = async (req, res) => {
     const { password: _, ...userResponse } = newUser.toObject();
     res.status(201).json(userResponse);
   } catch (err) {
+    console.error("CREATE USER ERROR:", err); // <-- confirm this exists
     res.status(500).json({ message: "Server error while creating user" });
   }
 };
@@ -71,7 +76,14 @@ const createUser = async (req, res) => {
 // GET /api/users
 const getUsers = async (req, res) => {
   try {
-    const { search, role, department, status, page = 1, limit = 10 } = req.query;
+    const {
+      search,
+      role,
+      department,
+      status,
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     const filter = {};
 
@@ -87,18 +99,26 @@ const getUsers = async (req, res) => {
     }
 
     if (role && role !== "All Roles") filter.role = role;
-    if (department && department !== "All Departments") filter.department = department;
+    if (department && department !== "All Departments")
+      filter.department = department;
     if (status && status !== "All Status") filter.status = status;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const [users, total] = await Promise.all([
-      User.find(filter).select("-password").sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+      User.find(filter)
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
       User.countDocuments(filter),
     ]);
 
-    res.status(200).json({ users, total, page: Number(page), limit: Number(limit) });
+    res
+      .status(200)
+      .json({ users, total, page: Number(page), limit: Number(limit) });
   } catch (err) {
+    console.error("GET USERS ERROR:", err);
     res.status(500).json({ message: "Server error while fetching users" });
   }
 };
@@ -110,6 +130,7 @@ const getUserById = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(200).json(user);
   } catch (err) {
+    console.error("GET USER BY ID ERROR:", err);
     res.status(500).json({ message: "Server error while fetching user" });
   }
 };
@@ -138,6 +159,7 @@ const updateUser = async (req, res) => {
 
     res.status(200).json(user);
   } catch (err) {
+    console.error("UPDATE USER ERROR:", err);
     res.status(500).json({ message: "Server error while updating user" });
   }
 };
@@ -149,6 +171,7 @@ const deleteUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     res.status(200).json({ message: "User deleted successfully" });
   } catch (err) {
+    console.error("DELETE USER ERROR:", err);
     res.status(500).json({ message: "Server error while deleting user" });
   }
 };

@@ -97,8 +97,8 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
     }
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.username.trim()) newErrors.username = "Username is required";
-    if (!formData.password || formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    if (!formData.password || formData.password.length <= 1) {
+      newErrors.password = "Password must be entered";
     }
 
     const roleFields = roleFieldConfig[formData.role] || [];

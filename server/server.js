@@ -1,12 +1,21 @@
-const express = require("express");
 const dotenv = require("dotenv");
+dotenv.config(); // MUST be first, before any other require()
+
+const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 
-dotenv.config();
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED REJECTION:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+
 connectDB();
 
 const app = express();

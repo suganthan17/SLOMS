@@ -30,6 +30,10 @@ function getInitials(name = "") {
     .toUpperCase();
 }
 
+function getDisplayId(user) {
+  return user.registerNumber || user.facultyId || user.employeeId || user.username || "—";
+}
+
 function UsersTable({
   users,
   selected,
@@ -46,14 +50,12 @@ function UsersTable({
   const allSelected = users.length > 0 && selected.length === users.length;
 
   const toggleAll = () => {
-    onSelectChange(allSelected ? [] : users.map((u) => u.id));
+    onSelectChange(allSelected ? [] : users.map((u) => u._id));
   };
 
   const toggleOne = (id) => {
     onSelectChange(
-      selected.includes(id)
-        ? selected.filter((s) => s !== id)
-        : [...selected, id]
+      selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]
     );
   };
 
@@ -89,9 +91,7 @@ function UsersTable({
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
                       <UsersIcon size={20} className="text-[#007EA7]" />
                     </div>
-                    <h3 className="mt-3 text-sm font-semibold text-[#003459]">
-                      No Users Found
-                    </h3>
+                    <h3 className="mt-3 text-sm font-semibold text-[#003459]">No Users Found</h3>
                     <p className="mt-1 text-xs text-gray-500">
                       Try adjusting your filters or add a new user.
                     </p>
@@ -100,35 +100,41 @@ function UsersTable({
               </tr>
             ) : (
               users.map((user, idx) => (
-                <tr key={user.id} className="transition hover:bg-gray-50">
+                <tr key={user._id} className="transition hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <input
                       type="checkbox"
-                      checked={selected.includes(user.id)}
-                      onChange={() => toggleOne(user.id)}
+                      checked={selected.includes(user._id)}
+                      onChange={() => toggleOne(user._id)}
                       className="h-4 w-4 rounded border-gray-300"
                     />
                   </td>
 
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ${
-                          avatarColors[idx % avatarColors.length]
-                        }`}
-                      >
-                        {getInitials(user.name)}
-                      </div>
+                      {user.photoUrl ? (
+                        <img
+                          src={user.photoUrl}
+                          alt={user.name}
+                          className="h-9 w-9 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ${
+                            avatarColors[idx % avatarColors.length]
+                          }`}
+                        >
+                          {getInitials(user.name)}
+                        </div>
+                      )}
                       <div>
-                        <p className="font-semibold text-[#003459]">
-                          {user.name}
-                        </p>
+                        <p className="font-semibold text-[#003459]">{user.name}</p>
                         <p className="text-xs text-gray-400">{user.email}</p>
                       </div>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-600">{user.userId}</td>
+                  <td className="px-4 py-3 text-gray-600">{getDisplayId(user)}</td>
 
                   <td className="px-4 py-3">
                     <span
@@ -140,9 +146,7 @@ function UsersTable({
                     </span>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-600">
-                    {user.department}
-                  </td>
+                  <td className="px-4 py-3 text-gray-600">{user.department || "—"}</td>
 
                   <td className="px-4 py-3 text-gray-600">{user.email}</td>
 
@@ -159,18 +163,21 @@ function UsersTable({
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <button
+                        type="button"
                         onClick={() => onEdit(user)}
                         className="rounded-md p-1.5 text-[#007EA7] transition hover:bg-blue-50"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => onView(user)}
                         className="rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100"
                       >
                         <Eye size={15} />
                       </button>
                       <button
+                        type="button"
                         onClick={() => onDelete(user)}
                         className="rounded-md p-1.5 text-red-500 transition hover:bg-red-50"
                       >
