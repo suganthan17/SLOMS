@@ -9,6 +9,8 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const facultyRoutes = require("./routes/facultyRoutes");
+const securityRoutes = require("./routes/securityRoutes");
+
 
 
 process.on("unhandledRejection", (reason) => {
@@ -36,6 +38,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/faculty", facultyRoutes);
+app.use("/api/security", securityRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
