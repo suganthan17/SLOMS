@@ -3,9 +3,11 @@ import SecuritySidebar from "../../components/security/SecuritySidebar";
 import SecurityNavbar from "../../components/security/SecurityNavbar";
 import { Html5Qrcode } from "html5-qrcode";
 import { User, CheckCircle, ScanLine } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 function ScanQr() {
   const [scanResult, setScanResult] = useState(null);
+  const { showToast } = useToast();
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const [scannerActive, setScannerActive] = useState(true);
@@ -55,6 +57,7 @@ function ScanQr() {
     try {
       if (html5QrRef.current) {
         await html5QrRef.current.stop();
+
         setScannerActive(false);
       }
 
@@ -78,6 +81,7 @@ function ScanQr() {
     } catch (err) {
       console.error("Scan error:", err);
       setError(err.message || "Failed to process QR code");
+      showToast({ type: "error", title: "Scan Failed", message: err.message });
     } finally {
       setProcessing(false);
     }
@@ -109,6 +113,11 @@ function ScanQr() {
       resetScanner();
     } catch (err) {
       setError(err.message);
+      showToast({
+        type: "error",
+        title: "Confirmation Failed",
+        message: err.message,
+      });
     } finally {
       setProcessing(false);
     }

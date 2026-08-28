@@ -1,27 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SecuritySidebar from "../../components/security/SecuritySidebar";
 import SecurityNavbar from "../../components/security/SecurityNavbar";
-import { Loader2, Users, User } from "lucide-react";
+import { Loader2, Users, User, RefreshCw } from "lucide-react";
 
 function StudentsOutside() {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchOutside = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    try {
+      const res = await fetch("/api/security/outside", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setLeaves(data.leaves || []);
+    } catch (err) {
+      console.error("Fetch students outside error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchOutside = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/security/outside", { credentials: "include" });
-        const data = await res.json();
-        setLeaves(data.leaves || []);
-      } catch (err) {
-        console.error("Fetch students outside error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOutside();
-  }, []);
+
+    // Auto-refresh every 10 seconds so the list stays live without manual action
+    const interval = setInterval(() => {
+      fetchOutside();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchOutside]);
 
   const formatDateTime = (value) =>
     new Date(value).toLocaleString("en-IN", {
@@ -37,10 +53,29 @@ function StudentsOutside() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <SecurityNavbar />
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="text-2xl font-bold text-[#003459]">Students Outside</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Students who have exited but not yet returned.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[#003459]">
+                Students Outside
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Students who have exited but not yet returned.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => fetchOutside(true)}
+              disabled={refreshing}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
+            >
+              <RefreshCw
+                size={15}
+                className={refreshing ? "animate-spin" : ""}
+              />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
 
           <div className="mt-6 rounded-xl border border-gray-200 bg-white">
             {loading ? (
@@ -59,7 +94,10 @@ function StudentsOutside() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {leaves.map((leave) => (
-                  <div key={leave._id} className="flex items-center gap-3 px-6 py-4">
+                  <div
+                    key={leave._id}
+                    className="flex items-center gap-3 px-6 py-4"
+                  >
                     {leave.student?.photoUrl ? (
                       <img
                         src={leave.student.photoUrl}
@@ -73,13 +111,18 @@ function StudentsOutside() {
                     )}
 
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-[#003459]">{leave.student?.name}</p>
+                      <p className="text-sm font-semibold text-[#003459]">
+                        {leave.student?.name}
+                      </p>
                       <p className="text-xs text-gray-500">
-                        {leave.student?.registerNumber} • {leave.student?.department}
+                        {leave.student?.registerNumber} •{" "}
+                        {leave.student?.department}
                       </p>
                     </div>
 
-                    <p className="text-xs text-gray-400">Exited: {formatDateTime(leave.exitTime)}</p>
+                    <p className="text-xs text-gray-400">
+                      Exited: {formatDateTime(leave.exitTime)}
+                    </p>
                   </div>
                 ))}
               </div>
