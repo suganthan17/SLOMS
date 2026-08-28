@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import SecuritySidebar from "../../components/security/SecuritySidebar";
 import SecurityNavbar from "../../components/security/SecurityNavbar";
 import { Html5Qrcode } from "html5-qrcode";
-import { User, CheckCircle, XCircle, ScanLine } from "lucide-react";
+import { User, CheckCircle, ScanLine } from "lucide-react";
 
 function ScanQr() {
-  const [scanResult, setScanResult] = useState(null); // { leave, nextAction }
+  const [scanResult, setScanResult] = useState(null);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const [scannerActive, setScannerActive] = useState(true);
@@ -22,12 +22,20 @@ function ScanQr() {
       .start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
-        (decodedText) => handleScanSuccess(decodedText),
-        () => {} // ignore per-frame scan failures
+        (decodedText) => {
+          console.log("QR DECODED:", decodedText);
+          handleScanSuccess(decodedText);
+        },
+        () => {
+          // per-frame decode failures — expected constantly while scanning, ignore
+        },
       )
+      .then(() => {
+        console.log("Camera started successfully");
+      })
       .catch((err) => {
         console.error("Camera start error:", err);
-        setError("Could not access camera. Check permissions.");
+        setError(`Could not access camera: ${err.message || err}`);
       });
 
     return () => {
@@ -35,9 +43,11 @@ function ScanQr() {
         html5QrRef.current.stop().catch(() => {});
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scannerActive]);
 
   const handleScanSuccess = async (qrToken) => {
+    console.log("handleScanSuccess called with token:", qrToken);
     if (processing) return;
     setProcessing(true);
     setError("");
@@ -55,7 +65,10 @@ function ScanQr() {
         body: JSON.stringify({ qrToken }),
       });
 
+      console.log("Scan API response status:", res.status);
+
       const data = await res.json();
+      console.log("Scan API response data:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "Invalid QR code");
@@ -63,6 +76,7 @@ function ScanQr() {
 
       setScanResult(data);
     } catch (err) {
+      console.error("Scan error:", err);
       setError(err.message || "Failed to process QR code");
     } finally {
       setProcessing(false);
@@ -171,14 +185,21 @@ function ScanQr() {
                     <p className="text-xs text-gray-500">
                       {scanResult.leave.student?.registerNumber} •{" "}
                       {scanResult.leave.student?.department} • Year{" "}
-                      {scanResult.leave.student?.year} • Sec {scanResult.leave.student?.section}
+                      {scanResult.leave.student?.year} • Sec{" "}
+                      {scanResult.leave.student?.section}
                     </p>
 
                     <div className="mt-4 w-full rounded-lg bg-gray-50 p-4">
-                      <p className="text-[11px] font-medium text-gray-400">Reason</p>
-                      <p className="mt-0.5 text-sm text-gray-700">{scanResult.leave.reason}</p>
+                      <p className="text-[11px] font-medium text-gray-400">
+                        Reason
+                      </p>
+                      <p className="mt-0.5 text-sm text-gray-700">
+                        {scanResult.leave.reason}
+                      </p>
 
-                      <p className="mt-3 text-[11px] font-medium text-gray-400">Valid Window</p>
+                      <p className="mt-3 text-[11px] font-medium text-gray-400">
+                        Valid Window
+                      </p>
                       <p className="mt-0.5 text-sm text-gray-700">
                         {formatDateTime(scanResult.leave.fromDateTime)} →{" "}
                         {formatDateTime(scanResult.leave.toDateTime)}
@@ -192,7 +213,9 @@ function ScanQr() {
                           : "bg-blue-50 text-blue-600"
                       }`}
                     >
-                      {scanResult.nextAction === "exit" ? "Confirm EXIT" : "Confirm ENTRY"}
+                      {scanResult.nextAction === "exit"
+                        ? "Confirm EXIT"
+                        : "Confirm ENTRY"}
                     </div>
 
                     {error && (
@@ -213,11 +236,7 @@ function ScanQr() {
                         disabled={processing}
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#007EA7] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#003459] disabled:opacity-60"
                       >
-                        {scanResult.nextAction === "exit" ? (
-                          <CheckCircle size={16} />
-                        ) : (
-                          <CheckCircle size={16} />
-                        )}
+                        <CheckCircle size={16} />
                         {processing ? "Processing..." : "Confirm"}
                       </button>
                     </div>
