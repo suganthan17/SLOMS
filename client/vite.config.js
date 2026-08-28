@@ -40,7 +40,6 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
-            // Never cache API calls — auth, leave status, QR tokens must always be live
             urlPattern: /^\/api\/.*/,
             handler: "NetworkOnly",
           },
