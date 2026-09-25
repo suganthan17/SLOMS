@@ -45,8 +45,21 @@ function ScanQr() {
         setError(`Could not access camera: ${err.message || err}`);
       });
     return () => {
-      if (html5QrRef.current) {
-        html5QrRef.current.stop().catch(() => {});
+      const scanner = html5QrRef.current;
+
+      if (scanner) {
+        try {
+          const state = scanner.getState();
+
+          // 2 = SCANNING
+          if (state === 2) {
+            scanner.stop().catch((err) => {
+              console.log("Scanner cleanup:", err.message);
+            });
+          }
+        } catch (err) {
+          console.log("Scanner cleanup skipped:", err.message);
+        }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,20 +74,22 @@ function ScanQr() {
     setError("");
 
     try {
-      // Stop scanner safely
-      if (html5QrRef.current) {
-        try {
-          const state = html5QrRef.current.getState();
+      // Stop scanner only if it is actually scanning
+      const scanner = html5QrRef.current;
 
-          // 2 = SCANNING
+      if (scanner) {
+        try {
+          const state = scanner.getState();
+
           if (state === 2) {
-            await html5QrRef.current.stop();
+            await scanner.stop();
           }
-        } catch (stopErr) {
-          console.log("Scanner already stopped:", stopErr.message);
+        } catch (err) {
+          console.log("Scanner already stopped:", err.message);
         }
       }
 
+      // Tell React to show the result screen
       setScannerActive(false);
 
       const res = await fetch("/api/security/scan", {
@@ -96,7 +111,8 @@ function ScanQr() {
         throw new Error(data.message || "Invalid QR code");
       }
 
-      // THIS should display the student verification card
+      console.log("Setting scan result:", data);
+
       setScanResult(data);
     } catch (err) {
       console.error("Scan error:", err);
@@ -117,6 +133,7 @@ function ScanQr() {
     setScanResult(null);
     setError("");
     setScannerActive(true);
+    html5QrRef.current = null;
   };
 
   const formatDateTime = (value) =>
