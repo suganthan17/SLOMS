@@ -54,20 +54,34 @@ function ScanQr() {
 
   const handleScanSuccess = async (qrToken) => {
     console.log("handleScanSuccess called with token:", qrToken);
+
     if (processing) return;
+
     setProcessing(true);
     setError("");
 
     try {
+      // Stop scanner safely
       if (html5QrRef.current) {
-        await html5QrRef.current.stop();
+        try {
+          const state = html5QrRef.current.getState();
 
-        setScannerActive(false);
+          // 2 = SCANNING
+          if (state === 2) {
+            await html5QrRef.current.stop();
+          }
+        } catch (stopErr) {
+          console.log("Scanner already stopped:", stopErr.message);
+        }
       }
+
+      setScannerActive(false);
 
       const res = await fetch("/api/security/scan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
         body: JSON.stringify({ qrToken }),
       });
@@ -75,52 +89,24 @@ function ScanQr() {
       console.log("Scan API response status:", res.status);
 
       const data = await res.json();
+
       console.log("Scan API response data:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "Invalid QR code");
       }
 
+      // THIS should display the student verification card
       setScanResult(data);
     } catch (err) {
       console.error("Scan error:", err);
+
       setError(err.message || "Failed to process QR code");
-      showToast({ type: "error", title: "Scan Failed", message: err.message });
-    } finally {
-      setProcessing(false);
-    }
-  };
 
-  const handleConfirm = async () => {
-    if (!scanResult) return;
-    setProcessing(true);
-
-    try {
-      const endpoint =
-        scanResult.nextAction === "exit"
-          ? "/api/security/scan/confirm-exit"
-          : "/api/security/scan/confirm-entry";
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ leaveId: scanResult.leave._id }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to confirm");
-      }
-
-      resetScanner();
-    } catch (err) {
-      setError(err.message);
       showToast({
         type: "error",
-        title: "Confirmation Failed",
-        message: err.message,
+        title: "Scan Failed",
+        message: err.message || "Failed to process QR code",
       });
     } finally {
       setProcessing(false);
