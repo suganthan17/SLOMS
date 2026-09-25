@@ -23,7 +23,11 @@ const leaveSchema = new mongoose.Schema(
       default: null,
     },
 
-    qrToken: { type: String, default: null, unique: true, sparse: true },
+    qrToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     outpassStatus: {
       type: String,
       enum: ["NotIssued", "Active", "Outside", "Completed"],

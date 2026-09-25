@@ -23,23 +23,27 @@ function ScanQr() {
     html5Qr
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
+        {
+          fps: 15,
+          qrbox: { width: 300, height: 300 },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
         (decodedText) => {
-          console.log("QR DECODED:", decodedText);
+          console.log("🔥🔥🔥 QR DECODED:", decodedText);
           handleScanSuccess(decodedText);
         },
-        () => {
-          // per-frame decode failures — expected constantly while scanning, ignore
+        (errorMessage) => {
+          // Normal scan failures — ignore
         },
       )
       .then(() => {
-        console.log("Camera started successfully");
+        console.log("✅ Camera started successfully");
       })
       .catch((err) => {
-        console.error("Camera start error:", err);
+        console.error("❌ Camera start error:", err);
         setError(`Could not access camera: ${err.message || err}`);
       });
-
     return () => {
       if (html5QrRef.current) {
         html5QrRef.current.stop().catch(() => {});
