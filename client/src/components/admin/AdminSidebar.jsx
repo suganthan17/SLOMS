@@ -2,9 +2,6 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
-  FileBarChart2,
-  UserCircle,
-  Settings,
   LogOut,
   GraduationCap,
   ChevronLeft,
@@ -22,22 +19,7 @@ const menuItems = [
     title: "User Management",
     path: "/admin/users",
     icon: Users,
-  },
-  {
-    title: "Reports",
-    path: "/admin/reports",
-    icon: FileBarChart2,
-  },
-  {
-    title: "Profile",
-    path: "/admin/profile",
-    icon: UserCircle,
-  },
-  {
-    title: "Settings",
-    path: "/admin/settings",
-    icon: Settings,
-  },
+  }
 ];
 
 function AdminSidebar() {

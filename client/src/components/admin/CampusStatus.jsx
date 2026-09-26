@@ -1,6 +1,17 @@
 import { LogIn, LogOut } from "lucide-react";
 
-function CampusStatus() {
+function CampusStatus({ campus }) {
+  const inside = campus?.inside ?? 0;
+  const outside = campus?.outside ?? 0;
+
+  const total = inside + outside;
+
+  const insidePercentage =
+    total > 0 ? Math.round((inside / total) * 100) : 0;
+
+  const outsidePercentage =
+    total > 0 ? Math.round((outside / total) * 100) : 0;
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="rounded-lg border border-gray-200 bg-white p-4">
@@ -9,7 +20,11 @@ function CampusStatus() {
             <p className="text-xs font-medium text-gray-500">
               Students Inside Campus
             </p>
-            <h2 className="mt-2 text-3xl font-bold text-[#003459]">0</h2>
+
+            <h2 className="mt-2 text-3xl font-bold text-[#003459]">
+              {inside}
+            </h2>
+
             <p className="mt-1 text-xs text-gray-400">
               Students currently present inside campus
             </p>
@@ -23,7 +38,7 @@ function CampusStatus() {
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
           <div
             className="h-full rounded-full bg-green-500"
-            style={{ width: "0%" }}
+            style={{ width: `${insidePercentage}%` }}
           />
         </div>
       </div>
@@ -34,7 +49,11 @@ function CampusStatus() {
             <p className="text-xs font-medium text-gray-500">
               Students Outside Campus
             </p>
-            <h2 className="mt-2 text-3xl font-bold text-[#003459]">0</h2>
+
+            <h2 className="mt-2 text-3xl font-bold text-[#003459]">
+              {outside}
+            </h2>
+
             <p className="mt-1 text-xs text-gray-400">
               Students currently outside campus
             </p>
@@ -48,7 +67,7 @@ function CampusStatus() {
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
           <div
             className="h-full rounded-full bg-red-500"
-            style={{ width: "0%" }}
+            style={{ width: `${outsidePercentage}%` }}
           />
         </div>
       </div>

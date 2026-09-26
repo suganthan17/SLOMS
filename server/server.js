@@ -10,6 +10,7 @@ const userRoutes = require("./routes/userRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const facultyRoutes = require("./routes/facultyRoutes");
 const securityRoutes = require("./routes/securityRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 
 
@@ -39,6 +40,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/security", securityRoutes);
+app.use("/api/admin", adminRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
