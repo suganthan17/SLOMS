@@ -26,6 +26,8 @@ const roleFieldConfig = {
       options: ["1", "2", "3", "4"],
     },
     { name: "section", label: "Section", type: "text" },
+    { name: "parentName", label: "Parent Name", type: "text" },
+    { name: "parentPhone", label: "Parent Phone", type: "text" },
     { name: "photo", label: "Student Photo", type: "file" },
   ],
   Faculty: [

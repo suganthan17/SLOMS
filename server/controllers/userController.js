@@ -15,6 +15,8 @@ const createUser = async (req, res) => {
       department,
       year,
       section,
+      parentName,
+      parentPhone,
       facultyId,
       designation,
       employeeId,
@@ -26,6 +28,7 @@ const createUser = async (req, res) => {
     }
 
     const existing = await User.findOne({ $or: [{ email }, { username }] });
+
     if (existing) {
       return res
         .status(409)
@@ -33,12 +36,27 @@ const createUser = async (req, res) => {
     }
 
     const roleFieldMap = {
-      Student: { registerNumber, department, year, section },
-      Faculty: { facultyId, department, designation },
-      Security: { employeeId, shift },
+      Student: {
+        registerNumber,
+        department,
+        year,
+        section,
+        parentName,
+        parentPhone,
+      },
+      Faculty: {
+        facultyId,
+        department,
+        designation,
+      },
+      Security: {
+        employeeId,
+        shift,
+      },
     };
 
     const roleFields = roleFieldMap[role];
+
     if (!roleFields) {
       return res.status(400).json({ message: "Invalid role" });
     }
@@ -66,9 +84,10 @@ const createUser = async (req, res) => {
     });
 
     const { password: _, ...userResponse } = newUser.toObject();
+
     res.status(201).json(userResponse);
   } catch (err) {
-    console.error("CREATE USER ERROR:", err); // <-- confirm this exists
+    console.error("CREATE USER ERROR:", err);
     res.status(500).json({ message: "Server error while creating user" });
   }
 };

@@ -3,7 +3,13 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
     phone: { type: String, required: true },
     username: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true },
@@ -24,6 +30,13 @@ const userSchema = new mongoose.Schema(
     department: { type: String },
     year: { type: String },
     section: { type: String },
+    parentName: { type: String },
+    parentPhone: {
+      type: String,
+      required: function () {
+        return this.role === "Student";
+      },
+    },
 
     // Faculty fields
     facultyId: { type: String },
@@ -33,7 +46,7 @@ const userSchema = new mongoose.Schema(
     employeeId: { type: String },
     shift: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("User", userSchema);

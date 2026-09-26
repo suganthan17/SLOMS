@@ -1,4 +1,5 @@
 const Leave = require("../models/Leave");
+const { sendSms } = require("../services/smsService");
 
 // POST /api/security/scan  — decode QR token, return student + leave info for visual verification
 const scanQr = async (req, res) => {
@@ -37,15 +38,19 @@ const scanQr = async (req, res) => {
 // POST /api/security/scan/confirm-exit
 const confirmExit = async (req, res) => {
   try {
-    const { leaveId } = req.body;
+    const leave = await Leave.findById(req.body.leaveId).populate(
+      "student",
+      "name parentPhone",
+    );
 
-    const leave = await Leave.findById(leaveId);
-    if (!leave) return res.status(404).json({ message: "Outpass not found" });
+    if (!leave) {
+      return res.status(404).json({ message: "Outpass not found" });
+    }
 
     if (leave.outpassStatus !== "Active") {
-      return res
-        .status(400)
-        .json({ message: "This outpass is not awaiting exit" });
+      return res.status(400).json({
+        message: "This outpass is not awaiting exit",
+      });
     }
 
     leave.outpassStatus = "Outside";
@@ -53,26 +58,50 @@ const confirmExit = async (req, res) => {
     leave.exitScannedBy = req.user._id;
 
     await leave.save();
+    console.log("EXIT CONFIRMED FOR:", leave.student.name);
+    console.log("PARENT PHONE:", leave.student.parentPhone);
+    console.log("STARTING EXIT SMS...");
 
-    res.status(200).json({ message: "Exit confirmed", leave });
+    try {
+      if (leave.student?.parentPhone) {
+        const exitTime = new Date(leave.exitTime).toLocaleString("en-IN");
+
+        await sendSms(
+          leave.student.parentPhone,
+          `SLOMS: Your ward ${leave.student.name} has EXITED the campus at ${exitTime}.`,
+        );
+      }
+    } catch (smsError) {
+      console.error("EXIT SMS ERROR:", smsError);
+    }
+
+    res.status(200).json({
+      message: "Exit confirmed",
+      leave,
+    });
   } catch (err) {
     console.error("CONFIRM EXIT ERROR:", err);
-    res.status(500).json({ message: "Server error while confirming exit" });
+    res.status(500).json({
+      message: "Server error while confirming exit",
+    });
   }
 };
-
 // POST /api/security/scan/confirm-entry
 const confirmEntry = async (req, res) => {
   try {
-    const { leaveId } = req.body;
+    const leave = await Leave.findById(req.body.leaveId).populate(
+      "student",
+      "name parentPhone",
+    );
 
-    const leave = await Leave.findById(leaveId);
-    if (!leave) return res.status(404).json({ message: "Outpass not found" });
+    if (!leave) {
+      return res.status(404).json({ message: "Outpass not found" });
+    }
 
     if (leave.outpassStatus !== "Outside") {
-      return res
-        .status(400)
-        .json({ message: "This outpass is not awaiting entry" });
+      return res.status(400).json({
+        message: "This outpass is not awaiting entry",
+      });
     }
 
     leave.outpassStatus = "Completed";
@@ -80,13 +109,34 @@ const confirmEntry = async (req, res) => {
     leave.entryScannedBy = req.user._id;
 
     await leave.save();
+    console.log("EXIT CONFIRMED FOR:", leave.student.name);
+    console.log("PARENT PHONE:", leave.student.parentPhone);
+    console.log("STARTING EXIT SMS...");
 
-    res
-      .status(200)
-      .json({ message: "Entry confirmed. Outpass completed.", leave });
+    try {
+      if (leave.student?.parentPhone) {
+        const entryTime = new Date(leave.entryTime).toLocaleString("en-IN");
+
+        await sendSms(
+          leave.student.parentPhone,
+          `SLOMS: Your ward ${leave.student.name} has ENTERED the campus at ${entryTime}. The outpass is now completed.`,
+        );
+      } else {
+        console.log("Parent phone number not available for entry SMS");
+      }
+    } catch (smsError) {
+      console.error("ENTRY SMS ERROR:", smsError);
+    }
+
+    res.status(200).json({
+      message: "Entry confirmed. Outpass completed.",
+      leave,
+    });
   } catch (err) {
     console.error("CONFIRM ENTRY ERROR:", err);
-    res.status(500).json({ message: "Server error while confirming entry" });
+    res.status(500).json({
+      message: "Server error while confirming entry",
+    });
   }
 };
 
