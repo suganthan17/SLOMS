@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
-import { LayoutDashboard, ScanLine, Users, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  LayoutDashboard,
+  ScanLine,
+  Users,
+  LogOut,
+  User,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
 
 const menuItems = [
   { title: "Dashboard", path: "/security/dashboard", icon: LayoutDashboard },
@@ -12,12 +21,16 @@ function SecuritySidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("securitySidebarCollapsed") === "true";
   });
+
   const [loggingOut, setLoggingOut] = useState(false);
+
   const [profile, setProfile] = useState(() => {
     const cached = sessionStorage.getItem("securityProfile");
     return cached ? JSON.parse(cached) : null;
   });
+
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   useEffect(() => {
     localStorage.setItem("securitySidebarCollapsed", collapsed);
@@ -25,9 +38,13 @@ function SecuritySidebar() {
 
   useEffect(() => {
     if (profile) return;
+
     const fetchProfile = async () => {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -37,20 +54,50 @@ function SecuritySidebar() {
         console.error("Failed to load profile:", err);
       }
     };
+
     fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
+
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      sessionStorage.removeItem("securityProfile");
+
+      if (res.ok) {
+        showToast({
+          type: "success",
+          title: "Logged Out",
+          message: "You have been logged out successfully.",
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Logout Failed",
+          message: "Unable to log out. Please try again.",
+        });
+      }
     } catch (err) {
       console.error("Logout request failed:", err);
-    } finally {
+
       sessionStorage.removeItem("securityProfile");
+
+      showToast({
+        type: "error",
+        title: "Logout Failed",
+        message: "Something went wrong while logging out.",
+      });
+    } finally {
       setLoggingOut(false);
-      navigate("/");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
     }
   };
 
@@ -67,15 +114,25 @@ function SecuritySidebar() {
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
-      <div className={`relative z-10 flex flex-col items-center px-6 pt-8 pb-6 ${collapsed ? "px-0" : ""}`}>
+      <div
+        className={`relative z-10 flex flex-col items-center px-6 pt-8 pb-6 ${
+          collapsed ? "px-0" : ""
+        }`}
+      >
         {profile?.photoUrl ? (
           <img
             src={profile.photoUrl}
             alt={profile.name}
-            className={`rounded-full object-cover ${collapsed ? "h-11 w-11" : "h-20 w-20"}`}
+            className={`rounded-full object-cover ${
+              collapsed ? "h-11 w-11" : "h-20 w-20"
+            }`}
           />
         ) : (
-          <div className={`flex items-center justify-center rounded-full bg-[#007EA7] ${collapsed ? "h-11 w-11" : "h-20 w-20"}`}>
+          <div
+            className={`flex items-center justify-center rounded-full bg-[#007EA7] ${
+              collapsed ? "h-11 w-11" : "h-20 w-20"
+            }`}
+          >
             <User size={collapsed ? 20 : 32} className="text-white" />
           </div>
         )}
@@ -83,16 +140,23 @@ function SecuritySidebar() {
         {!collapsed && profile && (
           <div className="mt-3 text-center">
             <p className="text-sm font-semibold text-white">{profile.name}</p>
-            <p className="mt-0.5 text-[11px] text-gray-300">{profile.shift} Shift</p>
+            <p className="mt-0.5 text-[11px] text-gray-300">
+              {profile.shift} Shift
+            </p>
           </div>
         )}
       </div>
 
-      <div className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`} />
+      <div
+        className={`relative z-10 border-t border-white/10 ${
+          collapsed ? "mx-4" : "mx-6"
+        }`}
+      />
 
       <div className="relative z-10 flex-1 px-4 pt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
+
           return (
             <NavLink
               key={item.title}
@@ -101,7 +165,11 @@ function SecuritySidebar() {
               className={({ isActive }) =>
                 `mb-1.5 flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                   collapsed ? "justify-center px-0" : ""
-                } ${isActive ? "bg-[#007EA7] text-white" : "text-gray-300 hover:bg-white/5 hover:text-white"}`
+                } ${
+                  isActive
+                    ? "bg-[#007EA7] text-white"
+                    : "text-gray-300 hover:bg-white/5 hover:text-white"
+                }`
               }
             >
               <Icon size={19} className="shrink-0" />
@@ -117,7 +185,11 @@ function SecuritySidebar() {
         <div className="absolute inset-16 rounded-full border-[16px] border-[#00A8E8]/40" />
       </div>
 
-      <div className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`} />
+      <div
+        className={`relative z-10 border-t border-white/10 ${
+          collapsed ? "mx-4" : "mx-6"
+        }`}
+      />
 
       <div className="relative z-10 px-4 py-6">
         <button

@@ -1,22 +1,27 @@
 const Leave = require("../models/Leave");
 const QRCode = require("qrcode");
 
-
 // POST /api/leaves  (student applies)
 const applyLeave = async (req, res) => {
   try {
     const { reason, fromDateTime, toDateTime } = req.body;
 
     if (!reason || !fromDateTime || !toDateTime) {
-      return res.status(400).json({ message: "Reason, fromDateTime, and toDateTime are required" });
+      return res
+        .status(400)
+        .json({ message: "Reason, fromDateTime, and toDateTime are required" });
     }
 
     if (new Date(fromDateTime) > new Date(toDateTime)) {
-      return res.status(400).json({ message: "fromDateTime cannot be after toDateTime" });
+      return res
+        .status(400)
+        .json({ message: "fromDateTime cannot be after toDateTime" });
     }
 
     if (new Date(fromDateTime) < new Date()) {
-      return res.status(400).json({ message: "fromDateTime cannot be in the past" });
+      return res
+        .status(400)
+        .json({ message: "fromDateTime cannot be in the past" });
     }
 
     const leave = await Leave.create({
@@ -60,17 +65,40 @@ const getMyOutpasses = async (req, res) => {
     res.status(200).json({ leaves });
   } catch (err) {
     console.error("GET MY OUTPASSES ERROR:", err);
-    res.status(500).json({ message: "Server error while fetching outpasses" });
+    res.status(500).json({
+      message: "Server error while fetching outpasses",
+    });
   }
 };
-
 const getOutpassQr = async (req, res) => {
   try {
-    const leave = await Leave.findOne({ _id: req.params.id, student: req.user._id });
+    const leave = await Leave.findOne({
+      _id: req.params.id,
+      student: req.user._id,
+    });
 
-    if (!leave) return res.status(404).json({ message: "Outpass not found" });
-    if (leave.status !== "Approved" || !leave.qrToken) {
-      return res.status(400).json({ message: "No active QR for this outpass" });
+    if (!leave) {
+      return res.status(404).json({
+        message: "Outpass not found",
+      });
+    }
+
+    if (leave.status !== "Approved") {
+      return res.status(400).json({
+        message: "Outpass is not approved",
+      });
+    }
+
+    if (leave.outpassStatus === "Completed") {
+      return res.status(400).json({
+        message: "This outpass has already been completed",
+      });
+    }
+
+    if (!leave.qrToken) {
+      return res.status(400).json({
+        message: "QR code is not available",
+      });
     }
 
     const qrDataUrl = await QRCode.toDataURL(leave.qrToken, {
@@ -81,7 +109,10 @@ const getOutpassQr = async (req, res) => {
     res.status(200).json({ qrDataUrl });
   } catch (err) {
     console.error("GET OUTPASS QR ERROR:", err);
-    res.status(500).json({ message: "Server error while generating QR" });
+
+    res.status(500).json({
+      message: "Server error while generating QR",
+    });
   }
 };
 

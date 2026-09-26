@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, User, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, User, Loader2, CheckCircle } from "lucide-react";
 
 function OutpassDetailModal({ isOpen, onClose, outpass, profile }) {
   const [qrDataUrl, setQrDataUrl] = useState(null);
@@ -10,10 +10,18 @@ function OutpassDetailModal({ isOpen, onClose, outpass, profile }) {
 
     const fetchQr = async () => {
       setLoadingQr(true);
+      setQrDataUrl(null);
+
+      if (outpass.outpassStatus === "Completed") {
+        setLoadingQr(false);
+        return;
+      }
+
       try {
         const res = await fetch(`/api/leaves/my/outpasses/${outpass._id}/qr`, {
           credentials: "include",
         });
+
         if (res.ok) {
           const data = await res.json();
           setQrDataUrl(data.qrDataUrl);
@@ -30,20 +38,43 @@ function OutpassDetailModal({ isOpen, onClose, outpass, profile }) {
 
   if (!isOpen || !outpass) return null;
 
-  const formatDateTime = (value) =>
-    new Date(value).toLocaleString("en-IN", {
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+
+    return new Date(value).toLocaleString("en-IN", {
       day: "numeric",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const status = outpass.outpassStatus || "Active";
+
+  const statusStyle =
+    status === "Completed"
+      ? "bg-green-50 text-green-600"
+      : status === "Outside"
+        ? "bg-orange-50 text-orange-600"
+        : "bg-blue-50 text-[#007EA7]";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-lg">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-[#003459]">Outpass Details</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-[#003459]">
+              Outpass Details
+            </h2>
+
+            <span
+              className={`mt-1 inline-block rounded-full px-3 py-1 text-[11px] font-medium ${statusStyle}`}
+            >
+              {status}
+            </span>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
@@ -66,38 +97,95 @@ function OutpassDetailModal({ isOpen, onClose, outpass, profile }) {
             </div>
           )}
 
-          <p className="mt-3 text-base font-semibold text-[#003459]">{profile?.name}</p>
+          <p className="mt-3 text-base font-semibold text-[#003459]">
+            {profile?.name}
+          </p>
+
           <p className="text-xs text-gray-500">
             {profile?.registerNumber} • {profile?.department}
           </p>
 
-          <div className="mt-5 flex h-[200px] w-[200px] items-center justify-center rounded-lg border border-gray-200 bg-white">
-            {loadingQr ? (
-              <Loader2 size={24} className="animate-spin text-[#007EA7]" />
-            ) : qrDataUrl ? (
-              <img src={qrDataUrl} alt="Outpass QR" className="h-full w-full object-contain" />
-            ) : (
-              <p className="text-xs text-gray-400">QR unavailable</p>
-            )}
-          </div>
+          {status !== "Completed" && (
+            <div className="mt-5 flex h-[200px] w-[200px] items-center justify-center rounded-lg border border-gray-200 bg-white">
+              {loadingQr ? (
+                <Loader2 size={24} className="animate-spin text-[#007EA7]" />
+              ) : qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt="Outpass QR"
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <p className="px-4 text-center text-xs text-gray-400">
+                  QR unavailable
+                </p>
+              )}
+            </div>
+          )}
+
+          {status === "Completed" && (
+            <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-green-50 px-4 py-4 text-sm font-semibold text-green-600">
+              <CheckCircle size={18} />
+              Outpass Completed
+            </div>
+          )}
 
           <div className="mt-5 w-full rounded-lg bg-gray-50 p-4">
             <p className="text-[11px] font-medium text-gray-400">Reason</p>
+
             <p className="mt-0.5 text-sm text-gray-700">{outpass.reason}</p>
 
-            <p className="mt-3 text-[11px] font-medium text-gray-400">Valid From</p>
-            <p className="mt-0.5 text-sm text-gray-700">{formatDateTime(outpass.fromDateTime)}</p>
+            <p className="mt-3 text-[11px] font-medium text-gray-400">
+              Valid From
+            </p>
 
-            <p className="mt-3 text-[11px] font-medium text-gray-400">Valid Until</p>
-            <p className="mt-0.5 text-sm text-gray-700">{formatDateTime(outpass.toDateTime)}</p>
+            <p className="mt-0.5 text-sm text-gray-700">
+              {formatDateTime(outpass.fromDateTime)}
+            </p>
 
-            <p className="mt-3 text-[11px] font-medium text-gray-400">Outpass ID</p>
-            <p className="mt-0.5 text-sm text-gray-700">{outpass._id.slice(-8).toUpperCase()}</p>
+            <p className="mt-3 text-[11px] font-medium text-gray-400">
+              Valid Until
+            </p>
+
+            <p className="mt-0.5 text-sm text-gray-700">
+              {formatDateTime(outpass.toDateTime)}
+            </p>
+
+            <div className="my-4 border-t border-gray-200" />
+
+            <p className="text-[11px] font-medium text-gray-400">Exit Time</p>
+
+            <p className="mt-0.5 text-sm font-semibold text-gray-700">
+              {outpass.exitTime
+                ? formatDateTime(outpass.exitTime)
+                : "Not exited yet"}
+            </p>
+
+            <p className="mt-3 text-[11px] font-medium text-gray-400">
+              Entry Time
+            </p>
+
+            <p className="mt-0.5 text-sm font-semibold text-gray-700">
+              {outpass.entryTime
+                ? formatDateTime(outpass.entryTime)
+                : "Not entered yet"}
+            </p>
+
+            <p className="mt-3 text-[11px] font-medium text-gray-400">
+              Outpass ID
+            </p>
+
+            <p className="mt-0.5 text-sm text-gray-700">
+              {outpass._id.slice(-8).toUpperCase()}
+            </p>
           </div>
 
-          <p className="mt-4 text-center text-[11px] text-gray-400">
-            Show this QR to security at the gate. Scanning is required for both exit and re-entry.
-          </p>
+          {status !== "Completed" && (
+            <p className="mt-4 text-center text-[11px] text-gray-400">
+              Show this QR to security at the gate. Scanning is required for
+              both exit and re-entry.
+            </p>
+          )}
         </div>
       </div>
     </div>

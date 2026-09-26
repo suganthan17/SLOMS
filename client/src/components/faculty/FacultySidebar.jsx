@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
 
 const menuItems = [
   { title: "Dashboard", path: "/faculty/dashboard", icon: LayoutDashboard },
@@ -25,12 +26,16 @@ function FacultySidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("facultySidebarCollapsed") === "true";
   });
+
   const [loggingOut, setLoggingOut] = useState(false);
+
   const [profile, setProfile] = useState(() => {
     const cached = sessionStorage.getItem("facultyProfile");
     return cached ? JSON.parse(cached) : null;
   });
+
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   useEffect(() => {
     localStorage.setItem("facultySidebarCollapsed", collapsed);
@@ -41,7 +46,10 @@ function FacultySidebar() {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -51,23 +59,50 @@ function FacultySidebar() {
         console.error("Failed to load profile:", err);
       }
     };
+
     fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
+
     try {
-      await fetch("/api/auth/logout", {
+      const res = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
+
+      sessionStorage.removeItem("facultyProfile");
+
+      if (res.ok) {
+        showToast({
+          type: "success",
+          title: "Logged Out",
+          message: "You have been logged out successfully.",
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Logout Failed",
+          message: "Unable to log out. Please try again.",
+        });
+      }
     } catch (err) {
       console.error("Logout request failed:", err);
-    } finally {
+
       sessionStorage.removeItem("facultyProfile");
+
+      showToast({
+        type: "error",
+        title: "Logout Failed",
+        message: "Something went wrong while logging out.",
+      });
+    } finally {
       setLoggingOut(false);
-      navigate("/");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
     }
   };
 
@@ -93,7 +128,9 @@ function FacultySidebar() {
           <img
             src={profile.photoUrl}
             alt={profile.name}
-            className={`rounded-full object-cover ${collapsed ? "h-11 w-11" : "h-20 w-20"}`}
+            className={`rounded-full object-cover ${
+              collapsed ? "h-11 w-11" : "h-20 w-20"
+            }`}
           />
         ) : (
           <div
@@ -117,12 +154,15 @@ function FacultySidebar() {
       </div>
 
       <div
-        className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`}
+        className={`relative z-10 border-t border-white/10 ${
+          collapsed ? "mx-4" : "mx-6"
+        }`}
       />
 
       <div className="relative z-10 flex-1 px-4 pt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
+
           return (
             <NavLink
               key={item.title}
@@ -152,7 +192,9 @@ function FacultySidebar() {
       </div>
 
       <div
-        className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`}
+        className={`relative z-10 border-t border-white/10 ${
+          collapsed ? "mx-4" : "mx-6"
+        }`}
       />
 
       <div className="relative z-10 px-4 py-6">

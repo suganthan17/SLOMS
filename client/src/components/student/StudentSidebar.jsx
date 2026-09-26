@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
 
 const menuItems = [
   { title: "Dashboard", path: "/student/dashboard", icon: LayoutDashboard },
@@ -22,28 +23,30 @@ function StudentSidebar() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("studentSidebarCollapsed") === "true";
   });
+
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Load from sessionStorage first so there's no flicker on remount —
-  // profile only re-fetches once per browser session, not every navigation
   const [profile, setProfile] = useState(() => {
     const cached = sessionStorage.getItem("studentProfile");
     return cached ? JSON.parse(cached) : null;
   });
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   useEffect(() => {
     localStorage.setItem("studentSidebarCollapsed", collapsed);
   }, [collapsed]);
 
   useEffect(() => {
-    // Skip refetching if we already have a cached profile from this session
     if (profile) return;
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -53,20 +56,50 @@ function StudentSidebar() {
         console.error("Failed to load profile:", err);
       }
     };
+
     fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
+
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      sessionStorage.removeItem("studentProfile");
+
+      if (res.ok) {
+        showToast({
+          type: "success",
+          title: "Logged Out",
+          message: "You have been logged out successfully.",
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Logout Failed",
+          message: "Unable to log out. Please try again.",
+        });
+      }
     } catch (err) {
       console.error("Logout request failed:", err);
+
+      sessionStorage.removeItem("studentProfile");
+
+      showToast({
+        type: "error",
+        title: "Logout Failed",
+        message: "Something went wrong while logging out.",
+      });
     } finally {
-      sessionStorage.removeItem("studentProfile"); // clear cache on logout
       setLoggingOut(false);
-      navigate("/");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
     }
   };
 
@@ -84,7 +117,7 @@ function StudentSidebar() {
       </button>
 
       <div
-        className={`relative z-10 flex flex-col items-center px-6 pt-8 pb-6 ${
+        className={`relative z-10 flex flex-col items-center px-6 pb-6 pt-8 ${
           collapsed ? "px-0" : ""
         }`}
       >
@@ -92,7 +125,9 @@ function StudentSidebar() {
           <img
             src={profile.photoUrl}
             alt={profile.name}
-            className={`rounded-full object-cover ${collapsed ? "h-11 w-11" : "h-20 w-20"}`}
+            className={`rounded-full object-cover ${
+              collapsed ? "h-11 w-11" : "h-20 w-20"
+            }`}
           />
         ) : (
           <div
@@ -107,17 +142,26 @@ function StudentSidebar() {
         {!collapsed && profile && (
           <div className="mt-3 text-center">
             <p className="text-sm font-semibold text-white">{profile.name}</p>
-            <p className="mt-0.5 text-[11px] text-gray-300">{profile.registerNumber}</p>
+
+            <p className="mt-0.5 text-[11px] text-gray-300">
+              {profile.registerNumber}
+            </p>
+
             <p className="text-[11px] text-gray-400">{profile.department}</p>
           </div>
         )}
       </div>
 
-      <div className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`} />
+      <div
+        className={`relative z-10 border-t border-white/10 ${
+          collapsed ? "mx-4" : "mx-6"
+        }`}
+      />
 
       <div className="relative z-10 flex-1 px-4 pt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
+
           return (
             <NavLink
               key={item.title}
@@ -134,6 +178,7 @@ function StudentSidebar() {
               }
             >
               <Icon size={19} className="shrink-0" />
+
               {!collapsed && <span>{item.title}</span>}
             </NavLink>
           );
@@ -146,7 +191,11 @@ function StudentSidebar() {
         <div className="absolute inset-16 rounded-full border-[16px] border-[#00A8E8]/40" />
       </div>
 
-      <div className={`relative z-10 border-t border-white/10 ${collapsed ? "mx-4" : "mx-6"}`} />
+      <div
+        className={`relative z-10 border-t border-white/10 ${
+          collapsed ? "mx-4" : "mx-6"
+        }`}
+      />
 
       <div className="relative z-10 px-4 py-6">
         <button
@@ -156,6 +205,7 @@ function StudentSidebar() {
           className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium text-gray-300 transition-all duration-300 hover:text-red-500 disabled:opacity-60"
         >
           <LogOut size={19} className="shrink-0" />
+
           {!collapsed && (loggingOut ? "Logging out..." : "Logout")}
         </button>
       </div>
