@@ -11,25 +11,26 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     phone: { type: String, required: true },
-    username: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true },
+
     role: {
       type: String,
       enum: ["Student", "Faculty", "Security"],
       required: true,
     },
+
     status: {
       type: String,
       enum: ["Active", "Inactive"],
       default: "Active",
     },
+
     photoUrl: { type: String, default: null },
 
-    // Student fields
     registerNumber: { type: String },
     department: { type: String },
     year: { type: String },
-    section: { type: String },
+
     parentName: { type: String },
     parentPhone: {
       type: String,
@@ -38,11 +39,9 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    // Faculty fields
     facultyId: { type: String },
     designation: { type: String },
 
-    // Security fields
     employeeId: { type: String },
     shift: { type: String },
   },

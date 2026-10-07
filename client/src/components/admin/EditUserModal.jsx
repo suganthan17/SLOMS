@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { X, Upload, Loader2 } from "lucide-react";
 
+const departmentOptions = [
+  "Computer Science and Engineering",
+  "Electronics and Communication Engineering",
+  "Electrical and Electronics Engineering",
+  "Information Technology",
+  "Mechanical Engineering",
+  "Civil Engineering",
+];
+
 const roleFieldConfig = {
   Student: [
     { name: "registerNumber", label: "Register Number", type: "text" },
@@ -8,7 +17,7 @@ const roleFieldConfig = {
       name: "department",
       label: "Department",
       type: "select",
-      options: ["Computer Science", "Electronics", "Mechanical", "Civil"],
+      options: departmentOptions,
     },
     {
       name: "year",
@@ -16,16 +25,18 @@ const roleFieldConfig = {
       type: "select",
       options: ["1", "2", "3", "4"],
     },
-    { name: "section", label: "Section", type: "text" },
+    { name: "parentName", label: "Parent Name", type: "text" },
+    { name: "parentPhone", label: "Parent Phone", type: "text" },
     { name: "photo", label: "Student Photo", type: "file" },
   ],
+
   Faculty: [
     { name: "facultyId", label: "Faculty ID", type: "text" },
     {
       name: "department",
       label: "Department",
       type: "select",
-      options: ["Computer Science", "Electronics", "Mechanical", "Civil"],
+      options: departmentOptions,
     },
     {
       name: "designation",
@@ -38,7 +49,14 @@ const roleFieldConfig = {
         "HOD",
       ],
     },
+    {
+      name: "photo",
+      label: "Faculty Photo",
+      type: "file",
+      required: false,
+    },
   ],
+
   Security: [
     { name: "employeeId", label: "Employee ID", type: "text" },
     {
@@ -46,6 +64,12 @@ const roleFieldConfig = {
       label: "Shift",
       type: "select",
       options: ["Morning", "Evening", "Night"],
+    },
+    {
+      name: "photo",
+      label: "Security Photo",
+      type: "file",
+      required: false,
     },
   ],
 };
@@ -63,11 +87,16 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
     const fetchUser = async () => {
       setLoading(true);
       setErrors({});
+
       try {
         const res = await fetch(`/api/users/${userId}`, {
           credentials: "include",
         });
-        if (!res.ok) throw new Error("Failed to load user");
+
+        if (!res.ok) {
+          throw new Error("Failed to load user");
+        }
+
         const data = await res.json();
 
         setFormData({
@@ -75,21 +104,24 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
           email: data.email || "",
           phone: data.phone || "",
           role: data.role,
-          username: data.username || "",
           password: "",
           registerNumber: data.registerNumber || "",
           department: data.department || "",
           year: data.year || "",
-          section: data.section || "",
+          parentName: data.parentName || "",
+          parentPhone: data.parentPhone || "",
           facultyId: data.facultyId || "",
           designation: data.designation || "",
           employeeId: data.employeeId || "",
           shift: data.shift || "",
           status: data.status || "Active",
         });
+
         setPhotoPreview(data.photoUrl || null);
       } catch (err) {
-        setErrors({ form: err.message || "Failed to load user" });
+        setErrors({
+          form: err.message || "Failed to load user",
+        });
       } finally {
         setLoading(false);
       }
@@ -101,12 +133,20 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
   if (!isOpen) return null;
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
   };
 
   const handlePhotoChange = (file) => {
     if (!file) return;
+
     handleChange("photo", file);
     setPhotoPreview(URL.createObjectURL(file));
   };
@@ -121,39 +161,63 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = "Enter a valid email";
     }
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-    if (!formData.username.trim()) newErrors.username = "Username is required";
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    }
+
+    if (formData.password && !formData.password.trim()) {
+      newErrors.password = "Password cannot be empty";
     }
 
     const roleFields = roleFieldConfig[formData.role] || [];
+
     roleFields.forEach((field) => {
-      if (field.type === "file") return;
+      if (field.type === "file") {
+        if (
+          field.required !== false &&
+          !formData[field.name] &&
+          !photoPreview
+        ) {
+          newErrors[field.name] = `${field.label} is required`;
+        }
+
+        return;
+      }
+
       if (!formData[field.name] || !String(formData[field.name]).trim()) {
         newErrors[field.name] = `${field.label} is required`;
       }
     });
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validate()) return;
 
     setSubmitting(true);
+
     try {
       const payload = new FormData();
+
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") payload.append(key, value);
+        if (value !== undefined && value !== "") {
+          payload.append(key, value);
+        }
       });
 
       const res = await fetch(`/api/users/${userId}`, {
@@ -164,6 +228,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err.message || "Failed to update user");
       }
 
@@ -187,8 +252,10 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold text-[#003459]">Edit User</h2>
+
             <p className="text-xs text-gray-500">Update account details.</p>
           </div>
+
           <button
             type="button"
             onClick={handleClose}
@@ -217,6 +284,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
                 onChange={(v) => handleChange("name", v)}
                 error={errors.name}
               />
+
               <Field
                 label="Email"
                 type="email"
@@ -224,18 +292,14 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
                 onChange={(v) => handleChange("email", v)}
                 error={errors.email}
               />
+
               <Field
                 label="Phone Number"
                 value={formData.phone}
                 onChange={(v) => handleChange("phone", v)}
                 error={errors.phone}
               />
-              <Field
-                label="Username"
-                value={formData.username}
-                onChange={(v) => handleChange("username", v)}
-                error={errors.username}
-              />
+
               <Field
                 label="New Password (optional)"
                 type="password"
@@ -243,6 +307,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
                 onChange={(v) => handleChange("password", v)}
                 error={errors.password}
               />
+
               <SelectField
                 label="Status"
                 value={formData.status}
@@ -256,6 +321,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
                   {formData.role} Details
                 </p>
+
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {roleFields.map((field) => {
                     if (field.type === "select") {
@@ -270,6 +336,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
                         />
                       );
                     }
+
                     if (field.type === "file") {
                       return (
                         <PhotoField
@@ -280,6 +347,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
                         />
                       );
                     }
+
                     return (
                       <Field
                         key={field.name}
@@ -302,6 +370,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
               >
                 Cancel
               </button>
+
               <button
                 type="submit"
                 disabled={submitting}
@@ -323,6 +392,7 @@ function Field({ label, value, onChange, error, type = "text" }) {
       <label className="mb-1.5 block text-xs font-medium text-gray-600">
         {label}
       </label>
+
       <input
         type={type}
         value={value}
@@ -331,6 +401,7 @@ function Field({ label, value, onChange, error, type = "text" }) {
           error ? "border-red-300" : "border-gray-200"
         }`}
       />
+
       {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
   );
@@ -342,6 +413,7 @@ function SelectField({ label, value, options, onChange, error }) {
       <label className="mb-1.5 block text-xs font-medium text-gray-600">
         {label}
       </label>
+
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -350,12 +422,14 @@ function SelectField({ label, value, options, onChange, error }) {
         }`}
       >
         <option value="">Select {label}</option>
+
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
           </option>
         ))}
       </select>
+
       {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
   );
@@ -367,6 +441,7 @@ function PhotoField({ label, preview, onChange }) {
       <label className="mb-1.5 block text-xs font-medium text-gray-600">
         {label}
       </label>
+
       <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 transition hover:bg-gray-50">
         {preview ? (
           <img
@@ -379,7 +454,9 @@ function PhotoField({ label, preview, onChange }) {
             <Upload size={16} className="text-gray-400" />
           </div>
         )}
+
         <span>{preview ? "Change photo" : "Upload photo"}</span>
+
         <input
           type="file"
           accept="image/*"

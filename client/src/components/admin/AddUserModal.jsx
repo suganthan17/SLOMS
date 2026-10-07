@@ -6,9 +6,17 @@ const initialCommon = {
   email: "",
   phone: "",
   role: "Student",
-  username: "",
   password: "",
 };
+
+const departmentOptions = [
+  "Computer Science and Engineering",
+  "Electronics and Communication Engineering",
+  "Electrical and Electronics Engineering",
+  "Information Technology",
+  "Mechanical Engineering",
+  "Civil Engineering",
+];
 
 const roleFieldConfig = {
   Student: [
@@ -17,7 +25,7 @@ const roleFieldConfig = {
       name: "department",
       label: "Department",
       type: "select",
-      options: ["Computer Science", "Electronics", "Mechanical", "Civil"],
+      options: departmentOptions,
     },
     {
       name: "year",
@@ -25,18 +33,18 @@ const roleFieldConfig = {
       type: "select",
       options: ["1", "2", "3", "4"],
     },
-    { name: "section", label: "Section", type: "text" },
     { name: "parentName", label: "Parent Name", type: "text" },
     { name: "parentPhone", label: "Parent Phone", type: "text" },
     { name: "photo", label: "Student Photo", type: "file" },
   ],
+
   Faculty: [
     { name: "facultyId", label: "Faculty ID", type: "text" },
     {
       name: "department",
       label: "Department",
       type: "select",
-      options: ["Computer Science", "Electronics", "Mechanical", "Civil"],
+      options: departmentOptions,
     },
     {
       name: "designation",
@@ -49,7 +57,9 @@ const roleFieldConfig = {
         "HOD",
       ],
     },
+    { name: "photo", label: "Faculty Photo", type: "file", required: false },
   ],
+
   Security: [
     { name: "employeeId", label: "Employee ID", type: "text" },
     {
@@ -58,6 +68,7 @@ const roleFieldConfig = {
       type: "select",
       options: ["Morning", "Evening", "Night"],
     },
+    { name: "photo", label: "Security Photo", type: "file", required: false },
   ],
 };
 
@@ -91,23 +102,31 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = "Enter a valid email";
     }
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-    if (!formData.username.trim()) newErrors.username = "Username is required";
-    if (!formData.password || formData.password.length <= 1) {
-      newErrors.password = "Password must be entered";
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
     }
 
     const roleFields = roleFieldConfig[formData.role] || [];
+
     roleFields.forEach((field) => {
       if (field.type === "file") {
-        if (!formData[field.name])
+        if (field.required !== false && !formData[field.name]) {
           newErrors[field.name] = `${field.label} is required`;
+        }
       } else if (
         !formData[field.name] ||
         !String(formData[field.name]).trim()
@@ -122,16 +141,22 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validate()) return;
 
     setSubmitting(true);
+
     try {
       const payload = new FormData();
+
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined && value !== "") payload.append(key, value);
+        if (value !== undefined && value !== "") {
+          payload.append(key, value);
+        }
       });
 
       await onCreate(payload);
+
       setFormData(initialCommon);
       setPhotoPreview(null);
       onClose();
@@ -155,10 +180,12 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
             <h2 className="text-lg font-semibold text-[#003459]">
               Add New User
             </h2>
+
             <p className="text-xs text-gray-500">
               Register a Student, Faculty, or Security Staff account.
             </p>
           </div>
+
           <button
             onClick={onClose}
             className="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100"
@@ -178,6 +205,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
             <label className="mb-1.5 block text-xs font-medium text-gray-600">
               Role
             </label>
+
             <div className="grid grid-cols-3 gap-2">
               {roleOptions.map((role) => (
                 <button
@@ -203,6 +231,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
               onChange={(v) => handleChange("name", v)}
               error={errors.name}
             />
+
             <Field
               label="Email"
               type="email"
@@ -210,18 +239,14 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
               onChange={(v) => handleChange("email", v)}
               error={errors.email}
             />
+
             <Field
               label="Phone Number"
               value={formData.phone}
               onChange={(v) => handleChange("phone", v)}
               error={errors.phone}
             />
-            <Field
-              label="Username"
-              value={formData.username}
-              onChange={(v) => handleChange("username", v)}
-              error={errors.username}
-            />
+
             <Field
               label="Password"
               type="password"
@@ -236,6 +261,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
                 {formData.role} Details
               </p>
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {roleFields.map((field) => {
                   if (field.type === "select") {
@@ -250,6 +276,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
                       />
                     );
                   }
+
                   if (field.type === "file") {
                     return (
                       <PhotoField
@@ -261,6 +288,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
                       />
                     );
                   }
+
                   return (
                     <Field
                       key={field.name}
@@ -283,6 +311,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={submitting}
@@ -303,6 +332,7 @@ function Field({ label, value, onChange, error, type = "text" }) {
       <label className="mb-1.5 block text-xs font-medium text-gray-600">
         {label}
       </label>
+
       <input
         type={type}
         value={value}
@@ -311,6 +341,7 @@ function Field({ label, value, onChange, error, type = "text" }) {
           error ? "border-red-300" : "border-gray-200"
         }`}
       />
+
       {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
   );
@@ -322,6 +353,7 @@ function SelectField({ label, value, options, onChange, error }) {
       <label className="mb-1.5 block text-xs font-medium text-gray-600">
         {label}
       </label>
+
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -330,12 +362,14 @@ function SelectField({ label, value, options, onChange, error }) {
         }`}
       >
         <option value="">Select {label}</option>
+
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
           </option>
         ))}
       </select>
+
       {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
   );
@@ -347,6 +381,7 @@ function PhotoField({ label, preview, onChange, error }) {
       <label className="mb-1.5 block text-xs font-medium text-gray-600">
         {label}
       </label>
+
       <label
         className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm text-gray-500 transition hover:bg-gray-50 ${
           error ? "border-red-300" : "border-gray-200"
@@ -363,7 +398,9 @@ function PhotoField({ label, preview, onChange, error }) {
             <Upload size={16} className="text-gray-400" />
           </div>
         )}
+
         <span>{preview ? "Change photo" : "Upload photo"}</span>
+
         <input
           type="file"
           accept="image/*"
@@ -371,6 +408,7 @@ function PhotoField({ label, preview, onChange, error }) {
           className="hidden"
         />
       </label>
+
       {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
   );

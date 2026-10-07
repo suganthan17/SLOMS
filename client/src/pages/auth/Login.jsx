@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,8 +17,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setError("Please enter both username and password");
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError("Please enter both email and password");
       return;
     }
 
@@ -86,16 +86,17 @@ const Login = () => {
 
           <div className="mb-6">
             <label className="mb-2 block font-medium text-[#003459]">
-              Username
+              Email
             </label>
 
             <div className="flex h-14 items-center rounded-xl border border-gray-300 bg-white px-4 transition-all duration-300 focus-within:border-[#00A8E8]">
-              <User size={20} className="text-[#007EA7]" />
+              <Mail size={20} className="text-[#007EA7]" />
               <input
-                type="text"
-                placeholder="Enter Username"
-                value={formData.username}
-                onChange={(e) => handleChange("username", e.target.value)}
+                type="email"
+                placeholder="Enter Email"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                autoComplete="email"
                 className="ml-3 w-full bg-transparent outline-none placeholder:text-gray-400"
               />
             </div>
@@ -108,13 +109,16 @@ const Login = () => {
 
             <div className="flex h-14 items-center rounded-xl border border-gray-300 bg-white px-4 transition-all duration-300 focus-within:border-[#00A8E8]">
               <Lock size={20} className="text-[#007EA7]" />
+
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter Password"
                 value={formData.password}
                 onChange={(e) => handleChange("password", e.target.value)}
+                autoComplete="current-password"
                 className="ml-3 w-full bg-transparent outline-none placeholder:text-gray-400"
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}

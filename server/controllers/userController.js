@@ -1,7 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
-// POST /api/users  (admin only)
 const createUser = async (req, res) => {
   try {
     const {
@@ -9,12 +8,10 @@ const createUser = async (req, res) => {
       email,
       phone,
       role,
-      username,
       password,
       registerNumber,
       department,
       year,
-      section,
       parentName,
       parentPhone,
       facultyId,
@@ -23,16 +20,16 @@ const createUser = async (req, res) => {
       shift,
     } = req.body;
 
-    if (!name || !email || !phone || !role || !username || !password) {
+    if (!name || !email || !phone || !role || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const existing = await User.findOne({ $or: [{ email }, { username }] });
+    const existing = await User.findOne({ email });
 
     if (existing) {
-      return res
-        .status(409)
-        .json({ message: "Email or username already in use" });
+      return res.status(409).json({
+        message: "Email already in use",
+      });
     }
 
     const roleFieldMap = {
@@ -40,7 +37,6 @@ const createUser = async (req, res) => {
         registerNumber,
         department,
         year,
-        section,
         parentName,
         parentPhone,
       },
@@ -58,14 +54,16 @@ const createUser = async (req, res) => {
     const roleFields = roleFieldMap[role];
 
     if (!roleFields) {
-      return res.status(400).json({ message: "Invalid role" });
+      return res.status(400).json({
+        message: "Invalid role",
+      });
     }
 
     for (const [key, value] of Object.entries(roleFields)) {
       if (!value) {
-        return res
-          .status(400)
-          .json({ message: `${key} is required for ${role}` });
+        return res.status(400).json({
+          message: `${key} is required for ${role}`,
+        });
       }
     }
 
@@ -76,7 +74,6 @@ const createUser = async (req, res) => {
       email,
       phone,
       role,
-      username,
       password: hashedPassword,
       status: "Active",
       photoUrl: req.file ? req.file.path : null,
@@ -88,11 +85,12 @@ const createUser = async (req, res) => {
     res.status(201).json(userResponse);
   } catch (err) {
     console.error("CREATE USER ERROR:", err);
-    res.status(500).json({ message: "Server error while creating user" });
+    res.status(500).json({
+      message: "Server error while creating user",
+    });
   }
 };
 
-// GET /api/users
 const getUsers = async (req, res) => {
   try {
     const {
@@ -110,17 +108,23 @@ const getUsers = async (req, res) => {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
-        { username: { $regex: search, $options: "i" } },
         { registerNumber: { $regex: search, $options: "i" } },
         { facultyId: { $regex: search, $options: "i" } },
         { employeeId: { $regex: search, $options: "i" } },
       ];
     }
 
-    if (role && role !== "All Roles") filter.role = role;
-    if (department && department !== "All Departments")
+    if (role && role !== "All Roles") {
+      filter.role = role;
+    }
+
+    if (department && department !== "All Departments") {
       filter.department = department;
-    if (status && status !== "All Status") filter.status = status;
+    }
+
+    if (status && status !== "All Status") {
+      filter.status = status;
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -133,28 +137,39 @@ const getUsers = async (req, res) => {
       User.countDocuments(filter),
     ]);
 
-    res
-      .status(200)
-      .json({ users, total, page: Number(page), limit: Number(limit) });
+    res.status(200).json({
+      users,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+    });
   } catch (err) {
     console.error("GET USERS ERROR:", err);
-    res.status(500).json({ message: "Server error while fetching users" });
+    res.status(500).json({
+      message: "Server error while fetching users",
+    });
   }
 };
 
-// GET /api/users/:id
 const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
     res.status(200).json(user);
   } catch (err) {
     console.error("GET USER BY ID ERROR:", err);
-    res.status(500).json({ message: "Server error while fetching user" });
+    res.status(500).json({
+      message: "Server error while fetching user",
+    });
   }
 };
 
-// PUT /api/users/:id
 const updateUser = async (req, res) => {
   try {
     const updates = { ...req.body };
@@ -174,25 +189,46 @@ const updateUser = async (req, res) => {
       runValidators: true,
     }).select("-password");
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
 
     res.status(200).json(user);
   } catch (err) {
     console.error("UPDATE USER ERROR:", err);
-    res.status(500).json({ message: "Server error while updating user" });
+    res.status(500).json({
+      message: "Server error while updating user",
+    });
   }
 };
 
-// DELETE /api/users/:id
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.status(200).json({ message: "User deleted successfully" });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "User deleted successfully",
+    });
   } catch (err) {
     console.error("DELETE USER ERROR:", err);
-    res.status(500).json({ message: "Server error while deleting user" });
+    res.status(500).json({
+      message: "Server error while deleting user",
+    });
   }
 };
 
-module.exports = { createUser, getUsers, getUserById, updateUser, deleteUser };
+module.exports = {
+  createUser,
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+};

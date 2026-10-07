@@ -7,36 +7,45 @@ function StudentNavbar() {
     const cached = sessionStorage.getItem("studentProfile");
     return cached ? JSON.parse(cached) : null;
   });
+
   const [isProfileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
-    if (profile) return;
-
     const fetchProfile = async () => {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          setProfile(data);
-          sessionStorage.setItem("studentProfile", JSON.stringify(data));
-        }
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        setProfile(data);
+        sessionStorage.setItem("studentProfile", JSON.stringify(data));
       } catch (err) {
         console.error("Failed to load profile:", err);
       }
     };
+
     fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
       <header className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-8">
-        <button className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100">
+        <button
+          type="button"
+          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100"
+        >
           <Menu size={22} />
         </button>
 
         <div className="flex items-center gap-5">
-          <button className="relative rounded-xl bg-gray-100 p-2.5 text-gray-600 transition hover:bg-gray-200">
+          <button
+            type="button"
+            className="relative rounded-xl bg-gray-100 p-2.5 text-gray-600 transition hover:bg-gray-200"
+          >
             <Bell size={20} />
           </button>
 
@@ -45,12 +54,12 @@ function StudentNavbar() {
           <button
             type="button"
             onClick={() => setProfileOpen(true)}
-            className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-gray-50"
+            className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-gray-50"
           >
             {profile?.photoUrl ? (
               <img
                 src={profile.photoUrl}
-                alt={profile.name}
+                alt={profile.name || "Student"}
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
@@ -59,9 +68,14 @@ function StudentNavbar() {
               </div>
             )}
 
-            <div className="leading-tight text-left">
-              <p className="text-sm font-semibold text-[#003459]">{profile?.name || "Student"}</p>
-              <p className="text-xs text-gray-400">{profile?.registerNumber || "Student"}</p>
+            <div className="leading-tight">
+              <p className="text-sm font-semibold text-[#003459]">
+                {profile?.name || "Student"}
+              </p>
+
+              <p className="text-xs text-gray-400">
+                {profile?.registerNumber || profile?.email || "Student"}
+              </p>
             </div>
 
             <ChevronDown size={16} className="ml-1 text-gray-400" />
