@@ -12,7 +12,7 @@ const facultyRoutes = require("./routes/facultyRoutes");
 const securityRoutes = require("./routes/securityRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
-
+const { sendEmail } = require("./services/emailService");
 
 process.on("unhandledRejection", (reason) => {
   console.error("UNHANDLED REJECTION:", reason);
@@ -32,8 +32,32 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
-  })
+  }),
 );
+
+app.get("/test-email", async (req, res) => {
+  try {
+    await sendEmail({
+      to: "sloms.college@gmail.com",
+      toName: "SLOMS Test",
+      subject: "SLOMS Email Test",
+      htmlContent: `
+        <h2>SLOMS Email Test</h2>
+        <p>This is a test email from the SLOMS backend.</p>
+        <p>Brevo email integration is working successfully.</p>
+      `,
+    });
+
+    res.status(200).json({
+      message: "Test email sent successfully",
+    });
+  } catch (error) {
+    console.error("TEST EMAIL ERROR:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
