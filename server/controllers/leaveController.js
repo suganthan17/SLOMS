@@ -1,5 +1,7 @@
 const Leave = require("../models/Leave");
+const User = require("../models/User");
 const QRCode = require("qrcode");
+const { sendEmail } = require("../services/emailService");
 
 // POST /api/leaves  (student applies)
 const applyLeave = async (req, res) => {
@@ -7,21 +9,21 @@ const applyLeave = async (req, res) => {
     const { reason, fromDateTime, toDateTime } = req.body;
 
     if (!reason || !fromDateTime || !toDateTime) {
-      return res
-        .status(400)
-        .json({ message: "Reason, fromDateTime, and toDateTime are required" });
+      return res.status(400).json({
+        message: "Reason, fromDateTime, and toDateTime are required",
+      });
     }
 
     if (new Date(fromDateTime) > new Date(toDateTime)) {
-      return res
-        .status(400)
-        .json({ message: "fromDateTime cannot be after toDateTime" });
+      return res.status(400).json({
+        message: "fromDateTime cannot be after toDateTime",
+      });
     }
 
     if (new Date(fromDateTime) < new Date()) {
-      return res
-        .status(400)
-        .json({ message: "fromDateTime cannot be in the past" });
+      return res.status(400).json({
+        message: "fromDateTime cannot be in the past",
+      });
     }
 
     const leave = await Leave.create({
@@ -32,10 +34,68 @@ const applyLeave = async (req, res) => {
       status: "Pending",
     });
 
+    try {
+      const faculties = await User.find({
+        role: "Faculty",
+        department: req.user.department,
+        status: "Active",
+      }).select("name email");
+
+      const fromTime = new Date(fromDateTime).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+
+      const toTime = new Date(toDateTime).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+
+      for (const faculty of faculties) {
+        if (!faculty.email) continue;
+
+        await sendEmail({
+          to: faculty.email,
+          toName: faculty.name,
+          subject: "New Leave Request - SLOMS",
+          htmlContent: `
+            <h2>New Leave Request</h2>
+
+            <p>A new leave request has been submitted by a student.</p>
+
+            <p>
+              <strong>Student Name:</strong> ${req.user.name}<br>
+              <strong>Register Number:</strong> ${req.user.registerNumber || "N/A"}<br>
+              <strong>Department:</strong> ${req.user.department || "N/A"}<br>
+              <strong>From:</strong> ${fromTime}<br>
+              <strong>To:</strong> ${toTime}<br>
+              <strong>Reason:</strong> ${reason}
+            </p>
+
+            <p>Please login to SLOMS to review and process this leave request.</p>
+
+            <p>
+              <strong>SLOMS - Student Leave & Outpass Management System</strong>
+            </p>
+          `,
+        });
+      }
+
+      console.log(
+        `Leave notification emails sent to ${faculties.length} faculty member(s)`,
+      );
+    } catch (emailError) {
+      console.error("LEAVE EMAIL ERROR:", emailError);
+    }
+
     res.status(201).json(leave);
   } catch (err) {
     console.error("APPLY LEAVE ERROR:", err);
-    res.status(500).json({ message: "Server error while applying leave" });
+    res.status(500).json({
+      message: "Server error while applying leave",
+    });
   }
 };
 
