@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
-const menuItems = [
+const menuItems = [ 
   {
     title: "Dashboard",
     path: "/admin/dashboard",

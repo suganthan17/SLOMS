@@ -64,7 +64,11 @@ const confirmExit = async (req, res) => {
 
     try {
       if (leave.student?.parentPhone) {
-        const exitTime = new Date(leave.exitTime).toLocaleString("en-IN");
+        const exitTime = new Date(leave.exitTime).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
 
         await sendSms(
           leave.student.parentPhone,
@@ -115,7 +119,11 @@ const confirmEntry = async (req, res) => {
 
     try {
       if (leave.student?.parentPhone) {
-        const entryTime = new Date(leave.entryTime).toLocaleString("en-IN");
+        const entryTime = new Date(leave.entryTime).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
 
         await sendSms(
           leave.student.parentPhone,
