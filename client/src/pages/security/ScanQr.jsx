@@ -100,6 +100,7 @@ function ScanQr() {
       });
 
       let data;
+
       try {
         data = await res.json();
       } catch {
@@ -151,6 +152,7 @@ function ScanQr() {
       });
 
       let data;
+
       try {
         data = await res.json();
       } catch {
@@ -203,6 +205,7 @@ function ScanQr() {
     return new Date(date).toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
+      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
@@ -264,6 +267,7 @@ function ScanQr() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={resetScanner}
                     disabled={processing}
                     className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
@@ -295,8 +299,7 @@ function ScanQr() {
                     </p>
 
                     <p className="mt-1 text-sm text-gray-500">
-                      {student?.department || "-"} • Year {student?.year || "-"}{" "}
-                      • Sec {student?.section || "-"}
+                      {student?.department || "-"} • Year {student?.year || "-"}
                     </p>
                   </div>
 
@@ -317,8 +320,8 @@ function ScanQr() {
                       </p>
 
                       <p className="mt-2 text-sm font-medium text-gray-800">
-                        {formatDate(leave?.fromDate)} →{" "}
-                        {formatDate(leave?.toDate)}
+                        {formatDate(leave?.fromDateTime)} →{" "}
+                        {formatDate(leave?.toDateTime)}
                       </p>
                     </div>
 
@@ -346,6 +349,7 @@ function ScanQr() {
 
                 <div className="flex gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
                   <button
+                    type="button"
                     onClick={resetScanner}
                     disabled={processing}
                     className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
@@ -354,6 +358,7 @@ function ScanQr() {
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleConfirm}
                     disabled={processing}
                     className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
