@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Upload, Loader2 } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 const departmentOptions = [
   "Computer Science and Engineering",
@@ -43,6 +44,7 @@ const roleFieldConfig = {
       name: "photo",
       label: "Student Photo",
       type: "file",
+      required: false,
     },
   ],
 
@@ -99,6 +101,8 @@ const roleFieldConfig = {
 };
 
 function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
+  const { showToast } = useToast();
+
   const [formData, setFormData] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [errors, setErrors] = useState({});
@@ -158,6 +162,12 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
         setErrors({
           form: err.message || "Failed to load user",
         });
+
+        showToast({
+          type: "error",
+          title: "Failed to Load User",
+          message: err.message || "Unable to load user details.",
+        });
       } finally {
         setLoading(false);
       }
@@ -203,6 +213,7 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
         setFacultyList(data.users || []);
       } catch (err) {
         console.error("Failed to load faculty:", err);
+
         setFacultyList([]);
       } finally {
         setLoadingFaculty(false);
@@ -299,7 +310,15 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      showToast({
+        type: "error",
+        title: "Incomplete Details",
+        message: "Please fill in all required fields.",
+      });
+
+      return;
+    }
 
     setSubmitting(true);
 
@@ -325,12 +344,25 @@ function EditUserModal({ isOpen, onClose, userId, onUpdated }) {
       }
 
       await onUpdated();
+
+      showToast({
+        type: "success",
+        title: "User Updated",
+        message: "User details have been updated successfully.",
+      });
+
       handleClose();
     } catch (err) {
       setErrors((prev) => ({
         ...prev,
         form: err.message || "Failed to update user",
       }));
+
+      showToast({
+        type: "error",
+        title: "Update Failed",
+        message: err.message || "Something went wrong while updating the user.",
+      });
     } finally {
       setSubmitting(false);
     }

@@ -3,16 +3,14 @@ import {
   User,
   Mail,
   Phone,
-  GraduationCap,
-  Users,
+  ShieldCheck,
+  IdCard,
+  Clock,
   CalendarDays,
-  Building2,
 } from "lucide-react";
 
-function StudentProfileModal({ isOpen, onClose, profile }) {
+function SecurityProfileModal({ isOpen, onClose, profile }) {
   if (!isOpen || !profile) return null;
-
-  const faculty = profile.assignedFaculty;
 
   const formatDate = (date) => {
     if (!date) return "—";
@@ -33,7 +31,6 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
         className="max-h-[90vh] w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
           <div>
             <h2 className="text-lg font-bold text-[#003459]">
@@ -54,14 +51,12 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
           </button>
         </div>
 
-        {/* Content */}
         <div className="max-h-[calc(90vh-140px)] overflow-y-auto px-6 py-6">
-          {/* Profile Summary */}
           <div className="mb-6 flex items-center gap-4 rounded-2xl border border-[#E4F3F8] bg-[#F7FCFE] p-5">
             {profile.photoUrl ? (
               <img
                 src={profile.photoUrl}
-                alt={profile.name || "Student"}
+                alt={profile.name || "Security"}
                 className="h-20 w-20 shrink-0 rounded-full object-cover ring-4 ring-white shadow-sm"
               />
             ) : (
@@ -75,16 +70,16 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
 
             <div className="min-w-0">
               <h3 className="truncate text-lg font-bold text-[#003459]">
-                {profile.name || "Student"}
+                {profile.name || "Security"}
               </h3>
 
               <p className="mt-1 truncate text-sm text-gray-500">
-                {profile.email || "Student"}
+                {profile.email || "Security"}
               </p>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[#E6F5FA] px-3 py-1 text-[11px] font-semibold text-[#007EA7]">
-                  Student
+                  Security
                 </span>
 
                 <span
@@ -100,7 +95,6 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
             </div>
           </div>
 
-          {/* Contact Information */}
           <ProfileSection
             icon={User}
             title="Contact Information"
@@ -118,102 +112,23 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
             />
           </ProfileSection>
 
-          {/* Academic Details */}
           <ProfileSection
-            icon={GraduationCap}
-            title="Academic Details"
+            icon={ShieldCheck}
+            title="Security Details"
           >
             <DetailItem
-              label="Register Number"
-              value={profile.registerNumber}
+              icon={IdCard}
+              label="Employee ID"
+              value={profile.employeeId}
             />
 
             <DetailItem
-              icon={Building2}
-              label="Department"
-              value={profile.department}
-            />
-
-            <DetailItem
-              label="Year"
-              value={profile.year}
+              icon={Clock}
+              label="Shift"
+              value={profile.shift}
             />
           </ProfileSection>
 
-          {/* Parent / Guardian */}
-          <ProfileSection
-            icon={Users}
-            title="Parent / Guardian"
-          >
-            <DetailItem
-              label="Parent Name"
-              value={profile.parentName}
-            />
-
-            <DetailItem
-              icon={Phone}
-              label="Parent Phone"
-              value={profile.parentPhone}
-            />
-          </ProfileSection>
-
-          {/* Assigned Faculty */}
-          <div className="mb-5 rounded-2xl border border-[#DDEFF6] bg-[#F8FCFE] p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E6F5FA]">
-                <GraduationCap
-                  size={16}
-                  className="text-[#007EA7]"
-                />
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-[#003459]">
-                  Assigned Faculty
-                </p>
-
-                <p className="text-[11px] text-gray-400">
-                  Faculty assigned to your department
-                </p>
-              </div>
-            </div>
-
-            {faculty ? (
-              <div className="rounded-xl border border-gray-100 bg-white p-4">
-                <div className="mb-4">
-                  <p className="text-sm font-semibold text-[#003459]">
-                    {faculty.name}
-                  </p>
-
-                  <p className="mt-1 text-xs text-gray-400">
-                    {faculty.designation || "Faculty"}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <DetailItem
-                    icon={Mail}
-                    label="Faculty Email"
-                    value={faculty.email}
-                  />
-
-                  <DetailItem
-                    icon={Phone}
-                    label="Faculty Phone"
-                    value={faculty.phone}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-5 text-center">
-                <p className="text-sm text-gray-400">
-                  No faculty assigned yet.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Account Information */}
           <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white">
@@ -236,7 +151,6 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end border-t border-gray-100 bg-gray-50/70 px-6 py-4">
           <button
             type="button"
@@ -256,7 +170,10 @@ function ProfileSection({ icon: Icon, title, children }) {
     <div className="mb-5 rounded-2xl border border-gray-100 bg-white">
       <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E6F5FA]">
-          <Icon size={16} className="text-[#007EA7]" />
+          <Icon
+            size={16}
+            className="text-[#007EA7]"
+          />
         </div>
 
         <p className="text-sm font-semibold text-[#003459]">
@@ -294,4 +211,4 @@ function DetailItem({ icon: Icon, label, value }) {
   );
 }
 
-export default StudentProfileModal;
+export default SecurityProfileModal;

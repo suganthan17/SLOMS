@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
+import ChangePassword from "./pages/auth/ChangePassword";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
@@ -23,9 +24,10 @@ function App() {
     <Routes>
       <Route path="/" element={<Login />} />
 
+      <Route path="/change-password" element={<ChangePassword />} />
+
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/users" element={<UserManagement />} />
-      
 
       <Route path="/student/dashboard" element={<StudentDashboard />} />
       <Route path="/student/apply-leave" element={<ApplyLeave />} />
