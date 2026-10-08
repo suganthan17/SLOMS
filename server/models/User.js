@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema(
     department: { type: String },
     year: { type: String },
 
+    assignedFaculty: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     parentName: { type: String },
     parentPhone: {
       type: String,

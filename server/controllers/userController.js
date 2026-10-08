@@ -12,6 +12,7 @@ const createUser = async (req, res) => {
       registerNumber,
       department,
       year,
+      assignedFaculty,
       parentName,
       parentPhone,
       facultyId,
@@ -21,10 +22,14 @@ const createUser = async (req, res) => {
     } = req.body;
 
     if (!name || !email || !phone || !role || !password) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
     }
 
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
 
     if (existing) {
       return res.status(409).json({
@@ -37,14 +42,17 @@ const createUser = async (req, res) => {
         registerNumber,
         department,
         year,
+        assignedFaculty,
         parentName,
         parentPhone,
       },
+
       Faculty: {
         facultyId,
         department,
         designation,
       },
+
       Security: {
         employeeId,
         shift,
@@ -67,11 +75,31 @@ const createUser = async (req, res) => {
       }
     }
 
+    if (role === "Student") {
+      const faculty = await User.findOne({
+        _id: assignedFaculty,
+        role: "Faculty",
+        status: "Active",
+      });
+
+      if (!faculty) {
+        return res.status(400).json({
+          message: "Selected faculty is invalid or inactive",
+        });
+      }
+
+      if (faculty.department !== department) {
+        return res.status(400).json({
+          message: "Assigned faculty must belong to the same department",
+        });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
       name,
-      email,
+      email: email.toLowerCase().trim(),
       phone,
       role,
       password: hashedPassword,
@@ -85,6 +113,7 @@ const createUser = async (req, res) => {
     res.status(201).json(userResponse);
   } catch (err) {
     console.error("CREATE USER ERROR:", err);
+
     res.status(500).json({
       message: "Server error while creating user",
     });
@@ -131,9 +160,14 @@ const getUsers = async (req, res) => {
     const [users, total] = await Promise.all([
       User.find(filter)
         .select("-password")
+        .populate(
+          "assignedFaculty",
+          "name email phone designation facultyId photoUrl",
+        )
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
+
       User.countDocuments(filter),
     ]);
 
@@ -145,6 +179,7 @@ const getUsers = async (req, res) => {
     });
   } catch (err) {
     console.error("GET USERS ERROR:", err);
+
     res.status(500).json({
       message: "Server error while fetching users",
     });
@@ -153,7 +188,12 @@ const getUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await User.findById(req.params.id)
+      .select("-password")
+      .populate(
+        "assignedFaculty",
+        "name email phone designation facultyId photoUrl",
+      );
 
     if (!user) {
       return res.status(404).json({
@@ -164,6 +204,7 @@ const getUserById = async (req, res) => {
     res.status(200).json(user);
   } catch (err) {
     console.error("GET USER BY ID ERROR:", err);
+
     res.status(500).json({
       message: "Server error while fetching user",
     });
@@ -173,6 +214,29 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const updates = { ...req.body };
+
+    const existingUser = await User.findById(req.params.id);
+
+    if (!existingUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    if (updates.email) {
+      updates.email = updates.email.toLowerCase().trim();
+
+      const emailExists = await User.findOne({
+        email: updates.email,
+        _id: { $ne: req.params.id },
+      });
+
+      if (emailExists) {
+        return res.status(409).json({
+          message: "Email already in use",
+        });
+      }
+    }
 
     if (updates.password) {
       updates.password = await bcrypt.hash(updates.password, 10);
@@ -184,20 +248,53 @@ const updateUser = async (req, res) => {
       updates.photoUrl = req.file.path;
     }
 
+    const finalRole = updates.role || existingUser.role;
+    const finalDepartment = updates.department || existingUser.department;
+    const finalAssignedFaculty =
+      updates.assignedFaculty || existingUser.assignedFaculty;
+
+    if (finalRole === "Student") {
+      if (!finalAssignedFaculty) {
+        return res.status(400).json({
+          message: "Assigned faculty is required for students",
+        });
+      }
+
+      const faculty = await User.findOne({
+        _id: finalAssignedFaculty,
+        role: "Faculty",
+        status: "Active",
+      });
+
+      if (!faculty) {
+        return res.status(400).json({
+          message: "Selected faculty is invalid or inactive",
+        });
+      }
+
+      if (faculty.department !== finalDepartment) {
+        return res.status(400).json({
+          message: "Assigned faculty must belong to the same department",
+        });
+      }
+
+      updates.assignedFaculty = finalAssignedFaculty;
+    }
+
     const user = await User.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
-    }).select("-password");
-
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
+    })
+      .select("-password")
+      .populate(
+        "assignedFaculty",
+        "name email phone designation facultyId photoUrl",
+      );
 
     res.status(200).json(user);
   } catch (err) {
     console.error("UPDATE USER ERROR:", err);
+
     res.status(500).json({
       message: "Server error while updating user",
     });
@@ -219,6 +316,7 @@ const deleteUser = async (req, res) => {
     });
   } catch (err) {
     console.error("DELETE USER ERROR:", err);
+
     res.status(500).json({
       message: "Server error while deleting user",
     });

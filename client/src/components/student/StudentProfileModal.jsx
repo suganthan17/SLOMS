@@ -1,13 +1,18 @@
-import { X, User } from "lucide-react";
+import { X, User, Mail, Phone, GraduationCap } from "lucide-react";
 
 function StudentProfileModal({ isOpen, onClose, profile }) {
   if (!isOpen || !profile) return null;
+
+  const faculty = profile.assignedFaculty;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white shadow-lg">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-[#003459]">My Profile</h2>
+          <h2 className="text-lg font-semibold text-[#003459]">
+            My Profile
+          </h2>
+
           <button
             type="button"
             onClick={onClose}
@@ -32,11 +37,15 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
             )}
 
             <div>
-              <h3 className="text-lg font-semibold text-[#003459]">{profile.name}</h3>
+              <h3 className="text-lg font-semibold text-[#003459]">
+                {profile.name}
+              </h3>
+
               <div className="mt-1 flex items-center gap-2">
                 <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-[#007EA7]">
-                  {profile.role}
+                  Student
                 </span>
+
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     profile.status === "Active"
@@ -51,29 +60,106 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
           </div>
 
           <div className="mb-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
               Contact Information
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <DetailItem label="Email" value={profile.email} />
-              <DetailItem label="Phone" value={profile.phone} />
-              <DetailItem label="Username" value={profile.username} />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DetailItem
+                icon={<Mail size={14} />}
+                label="Email"
+                value={profile.email}
+              />
+
+              <DetailItem
+                icon={<Phone size={14} />}
+                label="Phone"
+                value={profile.phone}
+              />
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <div className="mb-5">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
               Academic Details
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <DetailItem label="Register Number" value={profile.registerNumber} />
-              <DetailItem label="Department" value={profile.department} />
-              <DetailItem label="Year" value={profile.year} />
-              <DetailItem label="Section" value={profile.section} />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DetailItem
+                icon={<GraduationCap size={14} />}
+                label="Register Number"
+                value={profile.registerNumber}
+              />
+
+              <DetailItem
+                label="Department"
+                value={profile.department}
+              />
+
+              <DetailItem
+                label="Year"
+                value={profile.year}
+              />
             </div>
           </div>
 
-          <div className="mt-5 border-t border-gray-100 pt-4">
+          <div className="mb-5">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Parent / Guardian
+            </p>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DetailItem
+                label="Parent Name"
+                value={profile.parentName}
+              />
+
+              <DetailItem
+                label="Parent Phone"
+                value={profile.parentPhone}
+              />
+            </div>
+          </div>
+
+          <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#007EA7]">
+              Assigned Faculty
+            </p>
+
+            {faculty ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#003459]">
+                    {faculty.name}
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {faculty.designation || "Faculty"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <DetailItem
+                    icon={<Mail size={14} />}
+                    label="Faculty Email"
+                    value={faculty.email}
+                  />
+
+                  <DetailItem
+                    icon={<Phone size={14} />}
+                    label="Faculty Phone"
+                    value={faculty.phone}
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">
+                No faculty assigned yet.
+              </p>
+            )}
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
             <DetailItem
               label="Account Created"
               value={
@@ -103,11 +189,20 @@ function StudentProfileModal({ isOpen, onClose, profile }) {
   );
 }
 
-function DetailItem({ label, value }) {
+function DetailItem({ icon, label, value }) {
   return (
     <div>
-      <p className="text-[11px] font-medium text-gray-400">{label}</p>
-      <p className="mt-0.5 text-sm text-gray-700">{value || "—"}</p>
+      <div className="flex items-center gap-1.5">
+        {icon && <span className="text-gray-400">{icon}</span>}
+
+        <p className="text-[11px] font-medium text-gray-400">
+          {label}
+        </p>
+      </div>
+
+      <p className="mt-0.5 text-sm text-gray-700">
+        {value || "—"}
+      </p>
     </div>
   );
 }

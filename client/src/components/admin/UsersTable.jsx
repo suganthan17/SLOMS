@@ -31,7 +31,7 @@ function getInitials(name = "") {
 }
 
 function getDisplayId(user) {
-  return user.registerNumber || user.facultyId || user.employeeId || user.username || "—";
+  return user.registerNumber || user.facultyId || user.employeeId || "—";
 }
 
 function UsersTable({
@@ -55,7 +55,9 @@ function UsersTable({
 
   const toggleOne = (id) => {
     onSelectChange(
-      selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]
+      selected.includes(id)
+        ? selected.filter((s) => s !== id)
+        : [...selected, id],
     );
   };
 
@@ -73,6 +75,7 @@ function UsersTable({
                   className="h-4 w-4 rounded border-gray-300"
                 />
               </th>
+
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">User ID</th>
               <th className="px-4 py-3">Role</th>
@@ -91,7 +94,11 @@ function UsersTable({
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
                       <UsersIcon size={20} className="text-[#007EA7]" />
                     </div>
-                    <h3 className="mt-3 text-sm font-semibold text-[#003459]">No Users Found</h3>
+
+                    <h3 className="mt-3 text-sm font-semibold text-[#003459]">
+                      No Users Found
+                    </h3>
+
                     <p className="mt-1 text-xs text-gray-500">
                       Try adjusting your filters or add a new user.
                     </p>
@@ -127,14 +134,20 @@ function UsersTable({
                           {getInitials(user.name)}
                         </div>
                       )}
+
                       <div>
-                        <p className="font-semibold text-[#003459]">{user.name}</p>
+                        <p className="font-semibold text-[#003459]">
+                          {user.name}
+                        </p>
+
                         <p className="text-xs text-gray-400">{user.email}</p>
                       </div>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-600">{getDisplayId(user)}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {getDisplayId(user)}
+                  </td>
 
                   <td className="px-4 py-3">
                     <span
@@ -146,7 +159,9 @@ function UsersTable({
                     </span>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-600">{user.department || "—"}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {user.department || "—"}
+                  </td>
 
                   <td className="px-4 py-3 text-gray-600">{user.email}</td>
 
@@ -169,6 +184,7 @@ function UsersTable({
                       >
                         <Pencil size={15} />
                       </button>
+
                       <button
                         type="button"
                         onClick={() => onView(user)}
@@ -176,6 +192,7 @@ function UsersTable({
                       >
                         <Eye size={15} />
                       </button>
+
                       <button
                         type="button"
                         onClick={() => onDelete(user)}

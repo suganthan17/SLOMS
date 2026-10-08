@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Upload } from "lucide-react";
 
 const initialCommon = {
@@ -20,7 +20,11 @@ const departmentOptions = [
 
 const roleFieldConfig = {
   Student: [
-    { name: "registerNumber", label: "Register Number", type: "text" },
+    {
+      name: "registerNumber",
+      label: "Register Number",
+      type: "text",
+    },
     {
       name: "department",
       label: "Department",
@@ -33,13 +37,29 @@ const roleFieldConfig = {
       type: "select",
       options: ["1", "2", "3", "4"],
     },
-    { name: "parentName", label: "Parent Name", type: "text" },
-    { name: "parentPhone", label: "Parent Phone", type: "text" },
-    { name: "photo", label: "Student Photo", type: "file" },
+    {
+      name: "parentName",
+      label: "Parent Name",
+      type: "text",
+    },
+    {
+      name: "parentPhone",
+      label: "Parent Phone",
+      type: "text",
+    },
+    {
+      name: "photo",
+      label: "Student Photo",
+      type: "file",
+    },
   ],
 
   Faculty: [
-    { name: "facultyId", label: "Faculty ID", type: "text" },
+    {
+      name: "facultyId",
+      label: "Faculty ID",
+      type: "text",
+    },
     {
       name: "department",
       label: "Department",
@@ -57,18 +77,32 @@ const roleFieldConfig = {
         "HOD",
       ],
     },
-    { name: "photo", label: "Faculty Photo", type: "file", required: false },
+    {
+      name: "photo",
+      label: "Faculty Photo",
+      type: "file",
+      required: false,
+    },
   ],
 
   Security: [
-    { name: "employeeId", label: "Employee ID", type: "text" },
+    {
+      name: "employeeId",
+      label: "Employee ID",
+      type: "text",
+    },
     {
       name: "shift",
       label: "Shift",
       type: "select",
       options: ["Morning", "Evening", "Night"],
     },
-    { name: "photo", label: "Security Photo", type: "file", required: false },
+    {
+      name: "photo",
+      label: "Security Photo",
+      type: "file",
+      required: false,
+    },
   ],
 };
 
@@ -80,21 +114,94 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  const [facultyList, setFacultyList] = useState([]);
+  const [loadingFaculty, setLoadingFaculty] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || formData.role !== "Student") {
+      setFacultyList([]);
+      return;
+    }
+
+    const department = formData.department;
+
+    if (!department) {
+      setFacultyList([]);
+      return;
+    }
+
+    const fetchFaculty = async () => {
+      setLoadingFaculty(true);
+
+      try {
+        const params = new URLSearchParams({
+          role: "Faculty",
+          department,
+          status: "Active",
+          page: "1",
+          limit: "100",
+        });
+
+        const res = await fetch(`/api/users?${params.toString()}`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          setFacultyList([]);
+          return;
+        }
+
+        const data = await res.json();
+
+        setFacultyList(data.users || []);
+      } catch (err) {
+        console.error("Failed to load faculty:", err);
+        setFacultyList([]);
+      } finally {
+        setLoadingFaculty(false);
+      }
+    };
+
+    fetchFaculty();
+  }, [isOpen, formData.role, formData.department]);
+
   if (!isOpen) return null;
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [field]: value,
+      };
+
+      if (field === "department" && prev.role === "Student") {
+        updated.assignedFaculty = "";
+      }
+
+      return updated;
+    });
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+      ...(field === "department" ? { assignedFaculty: "" } : {}),
+    }));
   };
 
   const handleRoleChange = (role) => {
-    setFormData({ ...initialCommon, role });
+    setFormData({
+      ...initialCommon,
+      role,
+    });
+
     setPhotoPreview(null);
+    setFacultyList([]);
     setErrors({});
   };
 
   const handlePhotoChange = (file) => {
     if (!file) return;
+
     handleChange("photo", file);
     setPhotoPreview(URL.createObjectURL(file));
   };
@@ -135,7 +242,12 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
       }
     });
 
+    if (formData.role === "Student" && !formData.assignedFaculty) {
+      newErrors.assignedFaculty = "Assigned Faculty is required";
+    }
+
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -159,6 +271,9 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
 
       setFormData(initialCommon);
       setPhotoPreview(null);
+      setFacultyList([]);
+      setErrors({});
+
       onClose();
     } catch (err) {
       setErrors((prev) => ({
@@ -187,6 +302,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100"
           >
@@ -264,6 +380,34 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {roleFields.map((field) => {
+                  if (
+                    field.name === "department" &&
+                    formData.role === "Student"
+                  ) {
+                    return (
+                      <div key={field.name}>
+                        <SelectField
+                          label={field.label}
+                          value={formData[field.name] || ""}
+                          options={field.options}
+                          onChange={(v) => handleChange(field.name, v)}
+                          error={errors[field.name]}
+                        />
+
+                        <div className="mt-4">
+                          <FacultySelect
+                            value={formData.assignedFaculty || ""}
+                            facultyList={facultyList}
+                            loading={loadingFaculty}
+                            department={formData.department}
+                            onChange={(v) => handleChange("assignedFaculty", v)}
+                            error={errors.assignedFaculty}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+
                   if (field.type === "select") {
                     return (
                       <SelectField
@@ -366,6 +510,51 @@ function SelectField({ label, value, options, onChange, error }) {
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
+          </option>
+        ))}
+      </select>
+
+      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+function FacultySelect({
+  value,
+  facultyList,
+  loading,
+  department,
+  onChange,
+  error,
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-gray-600">
+        Assigned Faculty
+      </label>
+
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={!department || loading}
+        className={`w-full rounded-lg border px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-[#007EA7] disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${
+          error ? "border-red-300" : "border-gray-200"
+        }`}
+      >
+        <option value="">
+          {!department
+            ? "Select department first"
+            : loading
+              ? "Loading faculty..."
+              : facultyList.length === 0
+                ? "No faculty available"
+                : "Select Faculty"}
+        </option>
+
+        {facultyList.map((faculty) => (
+          <option key={faculty._id} value={faculty._id}>
+            {faculty.name}
+            {faculty.designation ? ` — ${faculty.designation}` : ""}
           </option>
         ))}
       </select>

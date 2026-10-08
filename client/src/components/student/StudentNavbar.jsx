@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Menu, Bell, ChevronDown, User } from "lucide-react";
+import { HelpCircle, ChevronDown, User } from "lucide-react";
 import StudentProfileModal from "./StudentProfileModal";
+import StudentHelpModal from "./StudentHelpModal";
 
 function StudentNavbar() {
   const [profile, setProfile] = useState(() => {
@@ -9,6 +10,7 @@ function StudentNavbar() {
   });
 
   const [isProfileOpen, setProfileOpen] = useState(false);
+  const [isHelpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -34,19 +36,16 @@ function StudentNavbar() {
   return (
     <>
       <header className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-8">
-        <button
-          type="button"
-          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100"
-        >
-          <Menu size={22} />
-        </button>
+        <div />
 
         <div className="flex items-center gap-5">
           <button
             type="button"
-            className="relative rounded-xl bg-gray-100 p-2.5 text-gray-600 transition hover:bg-gray-200"
+            onClick={() => setHelpOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-200"
           >
-            <Bell size={20} />
+            <HelpCircle size={18} />
+            <span>Help & Support</span>
           </button>
 
           <div className="h-8 w-px bg-gray-200" />
@@ -87,6 +86,11 @@ function StudentNavbar() {
         isOpen={isProfileOpen}
         onClose={() => setProfileOpen(false)}
         profile={profile}
+      />
+
+      <StudentHelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setHelpOpen(false)}
       />
     </>
   );
