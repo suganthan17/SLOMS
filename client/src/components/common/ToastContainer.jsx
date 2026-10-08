@@ -4,7 +4,7 @@ function ToastContainer({ toasts, onClose }) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
+    <div className="fixed left-1/2 top-6 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col gap-3 px-4">
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onClose={onClose} />
       ))}
@@ -13,11 +13,11 @@ function ToastContainer({ toasts, onClose }) {
         @keyframes toast-slide-in {
           from {
             opacity: 0;
-            transform: translateX(20px);
+            transform: translateY(-15px);
           }
           to {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateY(0);
           }
         }
       `}</style>

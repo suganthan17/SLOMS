@@ -44,21 +44,15 @@ const emptyStudent = {
   "Parent Phone": "",
 };
 
-function ImportStudentsModal({
-  isOpen,
-  onClose,
-  onImported,
-}) {
+function ImportStudentsModal({ isOpen, onClose, onImported }) {
   const fileInputRef = useRef(null);
   const { showToast } = useToast();
 
   const [rows, setRows] = useState([]);
   const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [editingIndex, setEditingIndex] =
-    useState(null);
-  const [editForm, setEditForm] =
-    useState(emptyStudent);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editForm, setEditForm] = useState(emptyStudent);
 
   if (!isOpen) return null;
 
@@ -82,17 +76,14 @@ function ImportStudentsModal({
   };
 
   const normalizeHeaders = (headers) => {
-    return headers.map((header) =>
-      String(header || "").trim()
-    );
+    return headers.map((header) => String(header || "").trim());
   };
 
   const validateColumns = (headers) => {
-    const normalizedHeaders =
-      normalizeHeaders(headers);
+    const normalizedHeaders = normalizeHeaders(headers);
 
     return requiredColumns.every((column) =>
-      normalizedHeaders.includes(column)
+      normalizedHeaders.includes(column),
     );
   };
 
@@ -104,19 +95,13 @@ function ImportStudentsModal({
     try {
       setLoading(true);
 
-      const extension =
-        file.name.split(".").pop()?.toLowerCase();
+      const extension = file.name.split(".").pop()?.toLowerCase();
 
-      if (
-        !["xlsx", "xls", "csv"].includes(
-          extension
-        )
-      ) {
+      if (!["xlsx", "xls", "csv"].includes(extension)) {
         showToast({
           type: "error",
           title: "Invalid File",
-          message:
-            "Please upload an Excel or CSV file.",
+          message: "Please upload an Excel or CSV file.",
         });
 
         return;
@@ -128,36 +113,29 @@ function ImportStudentsModal({
         type: "array",
       });
 
-      const firstSheetName =
-        workbook.SheetNames[0];
+      const firstSheetName = workbook.SheetNames[0];
 
       if (!firstSheetName) {
         showToast({
           type: "error",
           title: "Invalid File",
-          message:
-            "The uploaded file does not contain a sheet.",
+          message: "The uploaded file does not contain a sheet.",
         });
 
         return;
       }
 
-      const worksheet =
-        workbook.Sheets[firstSheetName];
+      const worksheet = workbook.Sheets[firstSheetName];
 
-      const data = XLSX.utils.sheet_to_json(
-        worksheet,
-        {
-          defval: "",
-        }
-      );
+      const data = XLSX.utils.sheet_to_json(worksheet, {
+        defval: "",
+      });
 
       if (!data.length) {
         showToast({
           type: "error",
           title: "Empty File",
-          message:
-            "The uploaded file does not contain student data.",
+          message: "The uploaded file does not contain student data.",
         });
 
         return;
@@ -169,8 +147,7 @@ function ImportStudentsModal({
         showToast({
           type: "error",
           title: "Invalid Columns",
-          message:
-            "The Excel file must contain all required student columns.",
+          message: "The Excel file must contain all required student columns.",
         });
 
         return;
@@ -183,29 +160,16 @@ function ImportStudentsModal({
           .toLowerCase(),
         Phone: String(row.Phone || "").trim(),
         Password: String(row.Password || ""),
-        "Register Number": String(
-          row["Register Number"] || ""
-        ).trim(),
-        Department: String(
-          row.Department || ""
-        ).trim(),
+        "Register Number": String(row["Register Number"] || "").trim(),
+        Department: String(row.Department || "").trim(),
         Year: String(row.Year || "").trim(),
-        "Parent Name": String(
-          row["Parent Name"] || ""
-        ).trim(),
-        "Parent Phone": String(
-          row["Parent Phone"] || ""
-        ).trim(),
+        "Parent Name": String(row["Parent Name"] || "").trim(),
+        "Parent Phone": String(row["Parent Phone"] || "").trim(),
       }));
 
-      const invalidDepartment =
-        cleanedRows.find(
-          (row) =>
-            row.Department &&
-            !departments.includes(
-              row.Department
-            )
-        );
+      const invalidDepartment = cleanedRows.find(
+        (row) => row.Department && !departments.includes(row.Department),
+      );
 
       if (invalidDepartment) {
         showToast({
@@ -228,16 +192,12 @@ function ImportStudentsModal({
         } loaded for preview.`,
       });
     } catch (error) {
-      console.error(
-        "EXCEL READ ERROR:",
-        error
-      );
+      console.error("EXCEL READ ERROR:", error);
 
       showToast({
         type: "error",
         title: "File Error",
-        message:
-          "Unable to read the uploaded file.",
+        message: "Unable to read the uploaded file.",
       });
     } finally {
       setLoading(false);
@@ -251,10 +211,7 @@ function ImportStudentsModal({
     });
   };
 
-  const updateEditField = (
-    field,
-    value
-  ) => {
+  const updateEditField = (field, value) => {
     setEditForm((prev) => ({
       ...prev,
       [field]: value,
@@ -263,28 +220,32 @@ function ImportStudentsModal({
 
   const saveEdit = () => {
     setRows((prev) =>
-      prev.map((row, index) =>
-        index === editingIndex
-          ? editForm
-          : row
-      )
+      prev.map((row, index) => (index === editingIndex ? editForm : row)),
     );
 
     setEditingIndex(null);
     setEditForm(emptyStudent);
+
+    showToast({
+      type: "success",
+      title: "Student Updated",
+      message: "The student details were updated.",
+    });
   };
 
   const deleteRow = (index) => {
-    setRows((prev) =>
-      prev.filter(
-        (_, rowIndex) => rowIndex !== index
-      )
-    );
+    setRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
 
     if (editingIndex === index) {
       setEditingIndex(null);
       setEditForm(emptyStudent);
     }
+
+    showToast({
+      type: "success",
+      title: "Student Removed",
+      message: "The student was removed from the import list.",
+    });
   };
 
   const validateRows = () => {
@@ -300,39 +261,27 @@ function ImportStudentsModal({
       const rowNumber = index + 2;
 
       for (const column of requiredColumns) {
-        if (
-          !String(row[column] || "").trim()
-        ) {
+        if (!String(row[column] || "").trim()) {
           return `Row ${rowNumber}: ${column} is required.`;
         }
       }
 
-      const email =
-        row.Email.trim().toLowerCase();
+      const email = row.Email.trim().toLowerCase();
 
-      const registerNumber =
-        row["Register Number"].trim();
+      const registerNumber = row["Register Number"].trim();
 
       if (emails.has(email)) {
         return `Row ${rowNumber}: Duplicate email ${email}.`;
       }
 
-      if (
-        registerNumbers.has(
-          registerNumber
-        )
-      ) {
+      if (registerNumbers.has(registerNumber)) {
         return `Row ${rowNumber}: Duplicate register number ${registerNumber}.`;
       }
 
       emails.add(email);
       registerNumbers.add(registerNumber);
 
-      if (
-        !departments.includes(
-          row.Department
-        )
-      ) {
+      if (!departments.includes(row.Department)) {
         return `Row ${rowNumber}: Invalid department ${row.Department}.`;
       }
     }
@@ -341,8 +290,7 @@ function ImportStudentsModal({
   };
 
   const handleImport = async () => {
-    const validationError =
-      validateRows();
+    const validationError = validateRows();
 
     if (validationError) {
       showToast({
@@ -362,38 +310,30 @@ function ImportStudentsModal({
         email: row.Email,
         phone: row.Phone,
         password: row.Password,
-        registerNumber:
-          row["Register Number"],
+        registerNumber: row["Register Number"],
         department: row.Department,
         year: row.Year,
         parentName: row["Parent Name"],
-        parentPhone:
-          row["Parent Phone"],
+        parentPhone: row["Parent Phone"],
       }));
 
-      const res = await fetch(
-        "/api/users/import-students",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            students,
-          }),
-        }
-      );
+      const res = await fetch("/api/users/import-students", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          students,
+        }),
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
-        const errorMessage =
-          Array.isArray(data.errors)
-            ? data.errors.join(" ")
-            : data.message ||
-              "Student import failed.";
+        const errorMessage = Array.isArray(data.errors)
+          ? data.errors.join(" ")
+          : data.message || "Student import failed.";
 
         throw new Error(errorMessage);
       }
@@ -413,17 +353,12 @@ function ImportStudentsModal({
       resetModal();
       onClose();
     } catch (error) {
-      console.error(
-        "IMPORT STUDENTS ERROR:",
-        error
-      );
+      console.error("IMPORT STUDENTS ERROR:", error);
 
       showToast({
         type: "error",
         title: "Import Failed",
-        message:
-          error.message ||
-          "Unable to import students.",
+        message: error.message || "Unable to import students.",
       });
     } finally {
       setLoading(false);
@@ -437,9 +372,7 @@ function ImportStudentsModal({
     >
       <div
         className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
-        onClick={(e) =>
-          e.stopPropagation()
-        }
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
@@ -448,8 +381,7 @@ function ImportStudentsModal({
             </h2>
 
             <p className="mt-1 text-sm text-gray-500">
-              Upload an Excel or CSV file to
-              import students.
+              Upload an Excel or CSV file to import students.
             </p>
           </div>
 
@@ -467,9 +399,11 @@ function ImportStudentsModal({
           <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6">
             <div className="flex flex-col items-center justify-center text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 text-[#007EA7]">
-                <FileSpreadsheet
-                  size={28}
-                />
+                {loading ? (
+                  <Loader2 size={28} className="animate-spin" />
+                ) : (
+                  <FileSpreadsheet size={28} />
+                )}
               </div>
 
               <h3 className="mt-4 text-sm font-semibold text-[#003459]">
@@ -477,22 +411,27 @@ function ImportStudentsModal({
               </h3>
 
               <p className="mt-1 max-w-md text-xs text-gray-500">
-                Required columns: Name, Email,
-                Phone, Password, Register
-                Number, Department, Year,
-                Parent Name and Parent Phone.
+                Required columns: Name, Email, Phone, Password, Register Number,
+                Department, Year, Parent Name and Parent Phone.
               </p>
 
               <button
                 type="button"
-                onClick={() =>
-                  fileInputRef.current?.click()
-                }
+                onClick={() => fileInputRef.current?.click()}
                 disabled={loading}
-                className="mt-4 flex items-center gap-2 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003459] disabled:opacity-50"
+                className="mt-4 flex items-center gap-2 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003459] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Upload size={16} />
-                Choose File
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} />
+                    Choose File
+                  </>
+                )}
               </button>
 
               <input
@@ -521,10 +460,7 @@ function ImportStudentsModal({
 
                   <p className="text-xs text-gray-500">
                     {rows.length} student
-                    {rows.length === 1
-                      ? ""
-                      : "s"}{" "}
-                    ready to import
+                    {rows.length === 1 ? "" : "s"} ready to import
                   </p>
                 </div>
               </div>
@@ -537,16 +473,14 @@ function ImportStudentsModal({
                         #
                       </th>
 
-                      {requiredColumns.map(
-                        (column) => (
-                          <th
-                            key={column}
-                            className="px-4 py-3 text-xs font-semibold text-gray-500"
-                          >
-                            {column}
-                          </th>
-                        )
-                      )}
+                      {requiredColumns.map((column) => (
+                        <th
+                          key={column}
+                          className="px-4 py-3 text-xs font-semibold text-gray-500"
+                        >
+                          {column}
+                        </th>
+                      ))}
 
                       <th className="px-4 py-3 text-xs font-semibold text-gray-500">
                         Faculty
@@ -559,70 +493,49 @@ function ImportStudentsModal({
                   </thead>
 
                   <tbody>
-                    {rows.map(
-                      (row, index) => (
-                        <tr
-                          key={index}
-                          className="border-t border-gray-100"
-                        >
-                          <td className="px-4 py-3 text-gray-500">
-                            {index + 1}
+                    {rows.map((row, index) => (
+                      <tr key={index} className="border-t border-gray-100">
+                        <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+
+                        {requiredColumns.map((column) => (
+                          <td
+                            key={column}
+                            className="max-w-[180px] truncate px-4 py-3 text-gray-700"
+                            title={row[column]}
+                          >
+                            {row[column]}
                           </td>
+                        ))}
 
-                          {requiredColumns.map(
-                            (column) => (
-                              <td
-                                key={column}
-                                className="max-w-[180px] truncate px-4 py-3 text-gray-700"
-                                title={
-                                  row[column]
-                                }
-                              >
-                                {row[column]}
-                              </td>
-                            )
-                          )}
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[#007EA7]">
+                            Auto Assign
+                          </span>
+                        </td>
 
-                          <td className="px-4 py-3">
-                            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[#007EA7]">
-                              Auto Assign
-                            </span>
-                          </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(index)}
+                              disabled={loading}
+                              className="rounded-lg p-2 text-[#007EA7] transition hover:bg-blue-50 disabled:opacity-50"
+                            >
+                              <Pencil size={16} />
+                            </button>
 
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openEdit(
-                                    index
-                                  )
-                                }
-                                className="rounded-lg p-2 text-[#007EA7] transition hover:bg-blue-50"
-                              >
-                                <Pencil
-                                  size={16}
-                                />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  deleteRow(
-                                    index
-                                  )
-                                }
-                                className="rounded-lg p-2 text-red-500 transition hover:bg-red-50"
-                              >
-                                <Trash2
-                                  size={16}
-                                />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    )}
+                            <button
+                              type="button"
+                              onClick={() => deleteRow(index)}
+                              disabled={loading}
+                              className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -633,110 +546,58 @@ function ImportStudentsModal({
             <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 px-4">
               <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                  <h3 className="font-semibold text-[#003459]">
-                    Edit Student
-                  </h3>
+                  <h3 className="font-semibold text-[#003459]">Edit Student</h3>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setEditingIndex(
-                        null
-                      );
-                      setEditForm(
-                        emptyStudent
-                      );
+                      setEditingIndex(null);
+                      setEditForm(emptyStudent);
                     }}
-                    className="rounded-lg p-2 text-gray-400 hover:bg-gray-100"
+                    disabled={loading}
+                    className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 disabled:opacity-50"
                   >
                     <X size={18} />
                   </button>
                 </div>
 
                 <div className="grid max-h-[70vh] grid-cols-1 gap-4 overflow-y-auto p-6 sm:grid-cols-2">
-                  {requiredColumns.map(
-                    (field) => (
-                      <div
-                        key={field}
-                        className={
-                          field ===
-                            "Parent Name" ||
-                          field ===
-                            "Parent Phone"
-                            ? ""
-                            : ""
-                        }
-                      >
-                        <label className="mb-1.5 block text-xs font-medium text-gray-600">
-                          {field}
-                        </label>
+                  {requiredColumns.map((field) => (
+                    <div key={field}>
+                      <label className="mb-1.5 block text-xs font-medium text-gray-600">
+                        {field}
+                      </label>
 
-                        {field ===
-                        "Department" ? (
-                          <select
-                            value={
-                              editForm[
-                                field
-                              ]
-                            }
-                            onChange={(e) =>
-                              updateEditField(
-                                field,
-                                e.target
-                                  .value
-                              )
-                            }
-                            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#007EA7]"
-                          >
-                            <option value="">
-                              Select Department
+                      {field === "Department" ? (
+                        <select
+                          value={editForm[field]}
+                          onChange={(e) =>
+                            updateEditField(field, e.target.value)
+                          }
+                          disabled={loading}
+                          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#007EA7] disabled:bg-gray-50"
+                        >
+                          <option value="">Select Department</option>
+
+                          {departments.map((department) => (
+                            <option key={department} value={department}>
+                              {department}
                             </option>
-
-                            {departments.map(
-                              (
-                                department
-                              ) => (
-                                <option
-                                  key={
-                                    department
-                                  }
-                                  value={
-                                    department
-                                  }
-                                >
-                                  {
-                                    department
-                                  }
-                                </option>
-                              )
-                            )}
-                          </select>
-                        ) : (
-                          <input
-                            type={
-                              field ===
-                              "Password"
-                                ? "text"
-                                : "text"
-                            }
-                            value={
-                              editForm[
-                                field
-                              ]
-                            }
-                            onChange={(e) =>
-                              updateEditField(
-                                field,
-                                e.target
-                                  .value
-                              )
-                            }
-                            className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-[#007EA7]"
-                          />
-                        )}
-                      </div>
-                    )
-                  )}
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={editForm[field]}
+                          onChange={(e) =>
+                            updateEditField(field, e.target.value)
+                          }
+                          disabled={loading}
+                          className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm outline-none focus:border-[#007EA7] disabled:bg-gray-50"
+                        />
+                      )}
+                    </div>
+                  ))}
 
                   <div className="sm:col-span-2">
                     <label className="mb-1.5 block text-xs font-medium text-gray-600">
@@ -744,8 +605,7 @@ function ImportStudentsModal({
                     </label>
 
                     <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-3 text-sm text-[#007EA7]">
-                      Automatically assigned
-                      based on department
+                      Automatically assigned based on department
                     </div>
                   </div>
                 </div>
@@ -754,14 +614,11 @@ function ImportStudentsModal({
                   <button
                     type="button"
                     onClick={() => {
-                      setEditingIndex(
-                        null
-                      );
-                      setEditForm(
-                        emptyStudent
-                      );
+                      setEditingIndex(null);
+                      setEditForm(emptyStudent);
                     }}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                    disabled={loading}
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -769,7 +626,8 @@ function ImportStudentsModal({
                   <button
                     type="button"
                     onClick={saveEdit}
-                    className="flex items-center gap-2 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white hover:bg-[#003459]"
+                    disabled={loading}
+                    className="flex items-center gap-2 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white hover:bg-[#003459] disabled:opacity-50"
                   >
                     <Check size={16} />
                     Save
@@ -793,17 +651,12 @@ function ImportStudentsModal({
           <button
             type="button"
             onClick={handleImport}
-            disabled={
-              loading || rows.length === 0
-            }
-            className="flex items-center gap-2 rounded-lg bg-[#007EA7] px-5 py-2 text-sm font-medium text-white hover:bg-[#003459] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={loading || rows.length === 0}
+            className="flex min-w-[150px] items-center justify-center gap-2 rounded-lg bg-[#007EA7] px-5 py-2 text-sm font-medium text-white hover:bg-[#003459] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
               <>
-                <Loader2
-                  size={16}
-                  className="animate-spin"
-                />
+                <Loader2 size={16} className="animate-spin" />
                 Importing...
               </>
             ) : (

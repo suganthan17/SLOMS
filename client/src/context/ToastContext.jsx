@@ -8,10 +8,14 @@ let idCounter = 0;
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback(({ type = "success", title, message, duration }) => {
-    const id = ++idCounter;
-    setToasts((prev) => [...prev, { id, type, title, message, duration }]);
-  }, []);
+  const showToast = useCallback(
+    ({ type = "success", title, message, duration }) => {
+      const id = ++idCounter;
+
+      setToasts((prev) => [...prev, { id, type, title, message, duration }]);
+    },
+    [],
+  );
 
   const closeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -27,6 +31,10 @@ export function ToastProvider({ children }) {
 
 export function useToast() {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within a ToastProvider");
+
+  if (!ctx) {
+    throw new Error("useToast must be used within ToastProvider");
+  }
+
   return ctx;
 }

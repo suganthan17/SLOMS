@@ -2,21 +2,40 @@ import { useState, useEffect } from "react";
 import FacultySidebar from "../../components/faculty/FacultySidebar";
 import FacultyNavbar from "../../components/faculty/FacultyNavbar";
 import { Loader2, ClipboardCheck, User, Check, X } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 function PendingApprovals() {
+  const { showToast } = useToast();
+
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState(null);
+  const [actionType, setActionType] = useState(null);
   const [remarksMap, setRemarksMap] = useState({});
 
   const fetchPending = async () => {
     setLoading(true);
+
     try {
-      const res = await fetch("/api/faculty/leaves/pending", { credentials: "include" });
+      const res = await fetch("/api/faculty/leaves/pending", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch pending requests");
+      }
+
       const data = await res.json();
       setLeaves(data.leaves || []);
     } catch (err) {
       console.error("Fetch pending leaves error:", err);
+
+      showToast({
+        type: "error",
+        title: "Failed to Load Requests",
+        message: err.message || "Could not load pending leave requests.",
+      });
     } finally {
       setLoading(false);
     }
@@ -28,25 +47,53 @@ function PendingApprovals() {
 
   const handleAction = async (leaveId, action) => {
     setActioningId(leaveId);
+    setActionType(action);
+
     try {
       const res = await fetch(`/api/faculty/leaves/${leaveId}/${action}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
-        body: JSON.stringify({ remarks: remarksMap[leaveId] || "" }),
+        body: JSON.stringify({
+          remarks: remarksMap[leaveId] || "",
+        }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+
         throw new Error(err.message || `Failed to ${action} leave`);
       }
 
-      setLeaves((prev) => prev.filter((l) => l._id !== leaveId));
+      setLeaves((prev) => prev.filter((leave) => leave._id !== leaveId));
+
+      setRemarksMap((prev) => {
+        const updated = { ...prev };
+        delete updated[leaveId];
+        return updated;
+      });
+
+      showToast({
+        type: "success",
+        title: action === "approve" ? "Leave Approved" : "Leave Rejected",
+        message:
+          action === "approve"
+            ? "The leave request has been approved successfully."
+            : "The leave request has been rejected successfully.",
+      });
     } catch (err) {
       console.error(`${action} leave error:`, err);
-      alert(err.message);
+
+      showToast({
+        type: "error",
+        title: action === "approve" ? "Approval Failed" : "Rejection Failed",
+        message: err.message || `Failed to ${action} leave request.`,
+      });
     } finally {
       setActioningId(null);
+      setActionType(null);
     }
   };
 
@@ -62,10 +109,15 @@ function PendingApprovals() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA]">
       <FacultySidebar />
+
       <div className="flex flex-1 flex-col overflow-hidden">
         <FacultyNavbar />
+
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="text-2xl font-bold text-[#003459]">Pending Approvals</h1>
+          <h1 className="text-2xl font-bold text-[#003459]">
+            Pending Approvals
+          </h1>
+
           <p className="mt-1 text-sm text-gray-500">
             Review and act on student leave requests.
           </p>
@@ -80,7 +132,11 @@ function PendingApprovals() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
                   <ClipboardCheck size={20} className="text-[#007EA7]" />
                 </div>
-                <h3 className="mt-3 text-sm font-semibold text-[#003459]">No pending requests</h3>
+
+                <h3 className="mt-3 text-sm font-semibold text-[#003459]">
+                  No pending requests
+                </h3>
+
                 <p className="mt-1 text-xs text-gray-500">All caught up.</p>
               </div>
             ) : (
@@ -108,8 +164,10 @@ function PendingApprovals() {
                           <p className="text-sm font-semibold text-[#003459]">
                             {leave.student?.name}
                           </p>
+
                           <p className="text-xs text-gray-500">
-                            {leave.student?.registerNumber} • {leave.student?.department} • Year{" "}
+                            {leave.student?.registerNumber} •{" "}
+                            {leave.student?.department} • Year{" "}
                             {leave.student?.year} • Sec {leave.student?.section}
                           </p>
                         </div>
@@ -122,13 +180,23 @@ function PendingApprovals() {
 
                     <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
-                        <p className="text-[11px] font-medium text-gray-400">Reason</p>
-                        <p className="mt-0.5 text-sm text-gray-700">{leave.reason}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-medium text-gray-400">Duration</p>
+                        <p className="text-[11px] font-medium text-gray-400">
+                          Reason
+                        </p>
+
                         <p className="mt-0.5 text-sm text-gray-700">
-                          {formatDateTime(leave.fromDateTime)} → {formatDateTime(leave.toDateTime)}
+                          {leave.reason}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-[11px] font-medium text-gray-400">
+                          Duration
+                        </p>
+
+                        <p className="mt-0.5 text-sm text-gray-700">
+                          {formatDateTime(leave.fromDateTime)} →{" "}
+                          {formatDateTime(leave.toDateTime)}
                         </p>
                       </div>
                     </div>
@@ -139,9 +207,13 @@ function PendingApprovals() {
                         placeholder="Optional remarks..."
                         value={remarksMap[leave._id] || ""}
                         onChange={(e) =>
-                          setRemarksMap((prev) => ({ ...prev, [leave._id]: e.target.value }))
+                          setRemarksMap((prev) => ({
+                            ...prev,
+                            [leave._id]: e.target.value,
+                          }))
                         }
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-[#007EA7]"
+                        disabled={actioningId === leave._id}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-[#007EA7] disabled:bg-gray-50 disabled:text-gray-400"
                       />
                     </div>
 
@@ -150,19 +222,40 @@ function PendingApprovals() {
                         type="button"
                         onClick={() => handleAction(leave._id, "reject")}
                         disabled={actioningId === leave._id}
-                        className="flex items-center gap-1.5 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                        className="flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <X size={15} />
-                        Reject
+                        {actioningId === leave._id &&
+                        actionType === "reject" ? (
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Rejecting...
+                          </>
+                        ) : (
+                          <>
+                            <X size={15} />
+                            Reject
+                          </>
+                        )}
                       </button>
+
                       <button
                         type="button"
                         onClick={() => handleAction(leave._id, "approve")}
                         disabled={actioningId === leave._id}
-                        className="flex items-center gap-1.5 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003459] disabled:opacity-60"
+                        className="flex items-center justify-center gap-1.5 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003459] disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <Check size={15} />
-                        {actioningId === leave._id ? "Processing..." : "Approve"}
+                        {actioningId === leave._id &&
+                        actionType === "approve" ? (
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Approving...
+                          </>
+                        ) : (
+                          <>
+                            <Check size={15} />
+                            Approve
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

@@ -1,34 +1,46 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setError("");
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.email.trim() || !formData.password.trim()) {
-      setError("Please enter both email and password");
+      showToast({
+        type: "error",
+        title: "Login Failed",
+        message: "Please enter both email and password.",
+      });
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
         body: JSON.stringify(formData),
       });
@@ -46,9 +58,22 @@ const Login = () => {
         Security: "/security/dashboard",
       };
 
-      navigate(roleRoutes[data.role] || "/");
+      showToast({
+        type: "success",
+        title: "Login Successful",
+        message: "Welcome back!",
+        duration: 1500,
+      });
+
+      setTimeout(() => {
+        navigate(roleRoutes[data.role] || "/");
+      }, 300);
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      showToast({
+        type: "error",
+        title: "Login Failed",
+        message: err.message || "Something went wrong. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -78,12 +103,6 @@ const Login = () => {
         </p>
 
         <form onSubmit={handleSubmit}>
-          {error && (
-            <div className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
           <div className="mb-6">
             <label className="mb-2 block font-medium text-[#003459]">
               Email
@@ -91,6 +110,7 @@ const Login = () => {
 
             <div className="flex h-14 items-center rounded-xl border border-gray-300 bg-white px-4 transition-all duration-300 focus-within:border-[#00A8E8]">
               <Mail size={20} className="text-[#007EA7]" />
+
               <input
                 type="email"
                 placeholder="Enter Email"
@@ -132,9 +152,16 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="h-14 w-full rounded-xl bg-[#007EA7] text-lg font-semibold text-white transition-all duration-300 hover:bg-[#003459] disabled:opacity-60"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#007EA7] text-lg font-semibold text-white transition-all duration-300 hover:bg-[#003459] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
       </div>

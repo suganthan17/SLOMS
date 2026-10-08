@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Loader2 } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
 
 const initialCommon = {
   name: "",
@@ -109,6 +110,8 @@ const roleFieldConfig = {
 const roleOptions = Object.keys(roleFieldConfig);
 
 function AddUserModal({ isOpen, onClose, onCreate }) {
+  const { showToast } = useToast();
+
   const [formData, setFormData] = useState(initialCommon);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [errors, setErrors] = useState({});
@@ -148,6 +151,13 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
 
         if (!res.ok) {
           setFacultyList([]);
+
+          showToast({
+            type: "error",
+            title: "Faculty Load Failed",
+            message: "Unable to load faculty for this department.",
+          });
+
           return;
         }
 
@@ -157,6 +167,12 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
       } catch (err) {
         console.error("Failed to load faculty:", err);
         setFacultyList([]);
+
+        showToast({
+          type: "error",
+          title: "Faculty Load Failed",
+          message: "Unable to load faculty. Please try again.",
+        });
       } finally {
         setLoadingFaculty(false);
       }
@@ -185,6 +201,7 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
       ...prev,
       [field]: "",
       ...(field === "department" ? { assignedFaculty: "" } : {}),
+      form: "",
     }));
   };
 
@@ -254,7 +271,15 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      showToast({
+        type: "error",
+        title: "Invalid Details",
+        message: "Please check the highlighted fields.",
+      });
+
+      return;
+    }
 
     setSubmitting(true);
 
@@ -269,6 +294,12 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
 
       await onCreate(payload);
 
+      showToast({
+        type: "success",
+        title: "User Created",
+        message: `${formData.name} has been added successfully.`,
+      });
+
       setFormData(initialCommon);
       setPhotoPreview(null);
       setFacultyList([]);
@@ -280,6 +311,12 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
         ...prev,
         form: err?.message || "Failed to create user",
       }));
+
+      showToast({
+        type: "error",
+        title: "Creation Failed",
+        message: err?.message || "Failed to create user. Please try again.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -304,7 +341,8 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100"
+            disabled={submitting}
+            className="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={18} />
           </button>
@@ -328,7 +366,8 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
                   type="button"
                   key={role}
                   onClick={() => handleRoleChange(role)}
-                  className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                  disabled={submitting}
+                  className={`rounded-lg border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                     formData.role === role
                       ? "border-[#007EA7] bg-blue-50 text-[#007EA7]"
                       : "border-gray-200 text-gray-500 hover:bg-gray-50"
@@ -451,7 +490,8 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+              disabled={submitting}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Cancel
             </button>
@@ -459,9 +499,16 @@ function AddUserModal({ isOpen, onClose, onCreate }) {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003459] disabled:opacity-60"
+              className="flex min-w-[120px] items-center justify-center gap-2 rounded-lg bg-[#007EA7] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#003459] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Creating..." : "Create User"}
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create User"
+              )}
             </button>
           </div>
         </form>
