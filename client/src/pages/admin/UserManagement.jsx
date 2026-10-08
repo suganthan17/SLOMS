@@ -7,6 +7,7 @@ import UsersTable from "../../components/admin/UsersTable";
 import AddUserModal from "../../components/admin/AddUserModal";
 import ViewUserModal from "../../components/admin/ViewUserModal";
 import EditUserModal from "../../components/admin/EditUserModal";
+import ImportStudentsModal from "../../components/admin/ImportStudentsModal";
 import { Loader2 } from "lucide-react";
 
 const defaultFilters = {
@@ -26,6 +27,7 @@ function UserManagement() {
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState([]);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
+  const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [viewUserId, setViewUserId] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
   const [refreshFlag, setRefreshFlag] = useState(0);
@@ -36,6 +38,7 @@ function UserManagement() {
     const load = async () => {
       setLoading(true);
       setErrorMsg("");
+
       try {
         const params = new URLSearchParams({
           search: filters.search,
@@ -49,9 +52,13 @@ function UserManagement() {
         const res = await fetch(`/api/users?${params}`, {
           credentials: "include",
         });
-        if (!res.ok) throw new Error("Failed to fetch users");
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch users");
+        }
 
         const data = await res.json();
+
         if (!cancelled) {
           setUsers(data.users);
           setTotalCount(data.total);
@@ -62,7 +69,9 @@ function UserManagement() {
           setErrorMsg("Could not load users. Please try again.");
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
@@ -73,7 +82,9 @@ function UserManagement() {
     };
   }, [filters, page, pageSize, refreshFlag]);
 
-  const refetch = useCallback(() => setRefreshFlag((f) => f + 1), []);
+  const refetch = useCallback(() => {
+    setRefreshFlag((f) => f + 1);
+  }, []);
 
   const handleCreateUser = async (formData) => {
     const res = await fetch("/api/users", {
@@ -92,7 +103,9 @@ function UserManagement() {
   };
 
   const handleDeleteUser = async (user) => {
-    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) {
+      return;
+    }
 
     try {
       const res = await fetch(`/api/users/${user._id}`, {
@@ -100,7 +113,9 @@ function UserManagement() {
         credentials: "include",
       });
 
-      if (!res.ok) throw new Error("Failed to delete user");
+      if (!res.ok) {
+        throw new Error("Failed to delete user");
+      }
 
       setSelected((prev) => prev.filter((id) => id !== user._id));
       refetch();
@@ -113,11 +128,17 @@ function UserManagement() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FA]">
       <AdminSidebar />
+
       <div className="flex flex-1 flex-col overflow-hidden">
         <AdminNavbar />
+
         <main className="flex-1 overflow-y-auto p-6">
           <div className="flex flex-col gap-5">
-            <UserManagementHeader onAddUser={() => setAddModalOpen(true)} />
+            <UserManagementHeader
+              onAddUser={() => setAddModalOpen(true)}
+              onImportStudents={() => setImportModalOpen(true)}
+            />
+
             <UserFilters
               filters={filters}
               onChange={(newFilters) => {
@@ -162,6 +183,15 @@ function UserManagement() {
         isOpen={isAddModalOpen}
         onClose={() => setAddModalOpen(false)}
         onCreate={handleCreateUser}
+      />
+
+      <ImportStudentsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={() => {
+          setPage(1);
+          refetch();
+        }}
       />
 
       <ViewUserModal
